@@ -10,17 +10,18 @@ BigDecimal.metaClass.mod = {Expression x -> new Number(delegate) % x}
 BigDecimal.metaClass.or = {Expression x -> new Number(delegate) | x}
 BigDecimal.metaClass.and = {Expression x -> new Number(delegate) & x}
 
-abstract class Expression {
+class Expression {
 	String name
+	String nameclean
 	
-	Expression plus(Expression op) { new Function('"+"',[this,op]) }
-	Expression minus(Expression op) { new Function('"-"',[this,op]) }
-	Expression multiply(Expression op) { new Function('"*"',[this,op]) }
-	Expression div(Expression op) { new Function('"\\/"',[this,op]) }
-	Expression mod(Expression op) {	new Function('"%"',[this,op]) }
+	Expression plus(Expression op) { new Function('+',[this,op]) }
+	Expression minus(Expression op) { new Function('-',[this,op]) }
+	Expression multiply(Expression op) { new Function('*',[this,op]) }
+	Expression div(Expression op) { new Function("\\/",[this,op]) }
+	Expression mod(Expression op) {	new Function('%',[this,op]) }
 	
-	Expression or(Expression op) { new Function('"|"',[this,op]) }
-	Expression and(Expression op) { new Function('"&"',[this,op]) }
+	Expression or(Expression op) { new Function('|',[this,op]) }
+	Expression and(Expression op) { new Function('&',[this,op]) }
 		
 	Expression plus(BigDecimal op) { this + new Number(op) }
 	Expression minus(BigDecimal op) { this - new Number(op) }
@@ -32,9 +33,11 @@ abstract class Expression {
 	Expression and(BigDecimal op) { this & new Number(op) }
 	
 	Expression negative() { new Number(-1) * this }
-	Expression bitwiseNegate() { new ComputeFunction('"not"',this) }
+	Expression bitwiseNegate() { new ComputeFunction('not',this) }
 	
-	public Expression(String n) { name = n }
+	public Expression(String n) { name = '"' + n + '"'; nameclean = n }
+	public String toString() { return name } 
+	public Expression noquotation() { name = nameclean; return this }
 }
 
 class Number extends Expression {
@@ -102,9 +105,17 @@ class Vars {
 }
 
 class VariableS extends ComputeFunction {
+	def quotation = true
 	public VariableS(String n, Expression par) { super(n,par) }
 	public VariableS(String n, BigDecimal par) { super(n,par) }
-	public String toString() { return '["setVar:to:", "' + name + '", ' + op.toString() + ']' }
+	public VariableS(String n, Expression par, Boolean q) { super(n,par); quotation = q }
+	public VariableS(String n, BigDecimal par, Boolean q) { super(n,par); quotation = q }
+	public String toString() { 
+		if(quotation)
+			return '["setVar:to:", ' + name + ', ' + op.toString() + ']'
+		else
+			return '["setVar:to:", ' + nameclean + ', ' + op.toString() + ']'
+	}
 }
 
 class VariableG extends Expression {
@@ -120,14 +131,20 @@ class VariableG extends Expression {
 	VariableG prev() { changeme(-1.0); this }
 	
 	VariableS leftShift(Expression ex) {
-		return new VariableS(name,ex)
+		return new VariableS(nameclean,ex)
 	}
 	
 	public String toString() { 
 		if(change) 
-			return '["changeVar:by:", "' + name + '", ' + changeval.toString() + "]"
+			return '["changeVar:by:", ' + name + ', ' + changeval.toString() + ']'
 		else
-			return '["readVariable", "' + name + '"]'
+			return '["readVariable", ' + name + ']'
+	}
+}
+
+class StringVar {
+	Object getProperty(String property){
+		return new Expression(property)
 	}
 }
 
@@ -135,9 +152,20 @@ class Var {
 	Object getProperty(String property){
 		return new VariableG(property)
 	}
+	
+	Expression set(String name, Expression s) { return new VariableS(name,s,false) }
+	Expression set(String name, BigDecimal s) { return new VariableS(name,s,false) }
+	Expression set(Expression name, Expression s) { return new VariableS(name.toString(),s,false) }
+	Expression set(Expression name, BigDecimal s) { return new VariableS(name.toString(),s,false) }
 }
 
-def V = new Var()
+class BlockParameter {
+	Object getProperty(String property){
+		return new Function('getParam',[new Expression(property),new Expression("r")])
+	}
+}
+
+def procaliases = [:]
 
 // Script handling
 def position = 0
@@ -151,31 +179,50 @@ def Scripts =  { scripts ->
 	println VariableG.varSet.toString()
 }
 
+// Custom blocks with hack
+// Parameter types list: https://docs.google.com/spreadsheet/ccc?key=0Ai13BQTlMxCzdG5lelZDczFnc241S2FmWVNhcEkwMEE#gid=0
+// You should provide block name with as a string with parameter types fe. '"calculate sum %n and %n and store it to %m.var"',["par1","par2","variable"]
+
+def Def = { alias, name, List pars -> procaliases[alias] = name ; new Function('procDef',
+	[   new Expression(name), 
+		new Expression(pars.collect{ '"' + it + '"'}.toString()).noquotation(),
+		new Expression(pars.collect{ '""' }.toString()).noquotation(),
+		new Expression('true')]
+	) 
+}
+
+def Call = { alias, List pars -> 
+	new Function('call', [new Expression(procaliases[alias])] + pars)
+}
+
 // Aliases
-def N = { x -> new Number(x) }
-def LT = { l, r -> new Function('"<"',[l,r]) }
-def GT = { l, r -> new Function('">"',[l,r]) }
-def EQ = { l, r -> new Function('"="',[l,r]) }
+def V = new Var() // Variable
+def Par = new BlockParameter() // Block Parameter
+def N = { x -> new Number(x) } // number
+def S = new StringVar() // string
+def LT = { l, r -> new Function('<',[l,r]) }
+def GT = { l, r -> new Function('>',[l,r]) }
+def EQ = { l, r -> new Function('=',[l,r]) }
 
-def Abs = { par -> new ComputeFunction('"abs"',par) }
-def Floor = { par -> new ComputeFunction('"floor"',par) }
-def Ceiling = { par -> new ComputeFunction('"ceiling"',par) }
-def Sqrt = { par -> new ComputeFunction('"sqrt"',par) }
-def Sin = { par -> new ComputeFunction('"sin"',par) }
-def Cos = { par -> new ComputeFunction('"cos"',par) }
-def Tan = { par -> new ComputeFunction('"tan"',par) }
-def ASin = { par -> new ComputeFunction('"asin"',par) }
-def ACos = { par -> new ComputeFunction('"acos"',par) }
-def ATan = { par -> new ComputeFunction('"atan"',par) }
-def Ln = { par -> new ComputeFunction('"ln"',par) }
-def Log = { par -> new ComputeFunction('"log"',par) }
-def Exp = { par -> new ComputeFunction('"e ^"',par) }
-def Pow10 = { par -> new ComputeFunction('"10 ^"',par) }
-def Round = { par -> new Function('"rounded"', [par]) }
-def Rnd = { from, to -> new Function('"randomFrom:to:"',[from,to]) }
+def Abs = { par -> new ComputeFunction('abs',par) }
+def Floor = { par -> new ComputeFunction('floor',par) }
+def Ceiling = { par -> new ComputeFunction('ceiling',par) }
+def Sqrt = { par -> new ComputeFunction('sqrt',par) }
+def Sin = { par -> new ComputeFunction('sin',par) }
+def Cos = { par -> new ComputeFunction('cos',par) }
+def Tan = { par -> new ComputeFunction('tan',par) }
+def ASin = { par -> new ComputeFunction('asin',par) }
+def ACos = { par -> new ComputeFunction('acos',par) }
+def ATan = { par -> new ComputeFunction('atan',par) }
+def Ln = { par -> new ComputeFunction('ln',par) }
+def Log = { par -> new ComputeFunction('log',par) }
+def Exp = { par -> new ComputeFunction('e ^',par) }
+def Pow10 = { par -> new ComputeFunction('10 ^',par) }
+def Round = { par -> new Function('rounded', [par]) }
+def Rnd = { from, to -> new Function('randomFrom:to:',[from,to]) }
 
-def IfElse = { cond,op1,op2 -> new Command('"doIfElse"',cond,op1,op2) }
-def If = { cond,op1 -> new Command('"doIfElse"',cond,op1) }
+def IfElse = { cond,op1,op2 -> new Command('doIfElse',cond,op1,op2) }
+def If = { cond,op1 -> new Command('doIfElse',cond,op1) }
 
 // Math aliases
 def M_E = 		N(2.7182818284590452354)
@@ -209,9 +256,16 @@ def D2R = 		N(0.01745329251994329576923690768489) // deg to rad conversion
 Scripts([
 	
 	Script([
+		Def("suma", 'suma %n i %n do zmiennej %m.var',['X','Y','suma']),
+		V.set( Par.suma, Par.X + Par.Y )
+	]),
+	
+	Script([
 		
 		V.blah << V.parameter, 
 		V.blah <<  V.blah,
+		Call("suma", [ V.blah, 33.3, S.zmienna_testowa ]),
+		V.blah << V.zmienna_testowa,
 		
 		IfElse(
 			EQ(3.0,5.0) & LT(V.par1,33.3), 
@@ -222,13 +276,7 @@ Scripts([
 			]
 		)
 
-	]),
-	
-	Script([
-		
-		V.par1 << M_PI,
-		V.par2 << Rnd(0,1000.0) / 1000.0
-		
 	])
+	
 	
 ])
