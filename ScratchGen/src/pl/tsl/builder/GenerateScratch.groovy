@@ -209,7 +209,7 @@ Scripts([
 	Script([
 		
 		V.blah << V.parameter,
-		V.blah << V.blah,
+		V.blah <<  V.blah,
 		
 		IfElse(
 			EQ(3.0,5.0) & LT(V.par1,33.3), 
