@@ -1,3 +1,5 @@
+// This script is used to generate Scratch json scripts to easier manage bigger projects
+
 package pl.tsl.builder
 
 BigDecimal.metaClass.plus = {Expression x -> new Number(delegate) + x}
