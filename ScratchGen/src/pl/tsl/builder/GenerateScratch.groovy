@@ -183,12 +183,12 @@ def Scripts =  { scripts ->
 // Parameter types list: https://docs.google.com/spreadsheet/ccc?key=0Ai13BQTlMxCzdG5lelZDczFnc241S2FmWVNhcEkwMEE#gid=0
 // You should provide block name with as a string with parameter types fe. '"calculate sum %n and %n and store it to %m.var"',["par1","par2","variable"]
 
-def Def = { alias, name, List pars -> procaliases[alias] = name ; new Function('procDef',
-	[   new Expression(name), 
+def Def = { alias, name, List pars, List blocks -> procaliases[alias] = name ; 
+	Script( [new Function('procDef', [new Expression(name), 
 		new Expression(pars.collect{ '"' + it + '"'}.toString()).noquotation(),
 		new Expression(pars.collect{ '""' }.toString()).noquotation(),
 		new Expression('true')]
-	) 
+	)] + blocks )
 }
 
 def Call = { alias, List pars -> 
@@ -255,10 +255,9 @@ def D2R = 		N(0.01745329251994329576923690768489) // deg to rad conversion
 
 Scripts([
 	
-	Script([
-		Def("suma", 'suma %n i %n do zmiennej %m.var',['X','Y','suma']),
-		V.set( Par.suma, Par.X + Par.Y )
-	]),
+	Def("suma", 'suma %n i %n do zmiennej %m.var',['X','Y','suma'],
+		[V.set( Par.suma, Par.X + Par.Y )]
+	),
 	
 	Script([
 		
