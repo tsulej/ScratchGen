@@ -326,7 +326,7 @@ Scripts([
 							  V.y << (2.0 * Par.X * Par.Y) / V.r	
 							],
 							[IfElse ( EQ( Par.func, 5), // Polar
-								[ V.x << V.atan2xy * M_1_PI * D2R,
+								[ V.x <<  M_1_PI * D2R * V.atan2xy,
 								  V.y << V.r - 1.0
 								],
 								[IfElse ( EQ(Par.func,6), // Handkerchief
@@ -340,7 +340,7 @@ Scripts([
 										  V.y << -(V.r) * Cos(V.par1)
 										],
 										[IfElse ( EQ( Par.func,8), // Disc
-											[ V.par1 << D2R * V.atan2xy * M_1_PI,
+											[ V.par1 << D2R * M_1_PI * V.atan2xy,
 											  V.par2 << M_PI * R2D * V.r,
 											  V.x << Sin(V.par2) * V.par1,
 											  V.y << Cos(V.par2) * V.par1,
@@ -457,6 +457,49 @@ Scripts([
 										[ //here
 										],
 										[IfElse ( EQ( Par.func, 28), //
+											[ //here
+											],
+											[ // here
+											]
+										)]
+									)]
+								)]
+							)]
+						)]
+					)]
+				)]
+			)]
+		)
+	]
+	),
+
+	Def("calc_0_9", 'calculate 0-9 %n %n %n',['func','X','Y'],
+	[
+		IfElse( EQ( Par.func,0), //
+			[ //here
+			],
+			[IfElse ( EQ( Par.func, 1), //
+				[ //here
+				],
+				[IfElse ( EQ( Par.func, 2), //
+					[ //here
+					],
+					[IfElse ( EQ( Par.func, 3), //
+						[ //here
+						],
+						[IfElse ( EQ( Par.func, 4), //
+							[ //here
+							],
+							[IfElse ( EQ( Par.func, 5), //
+								[ //here
+								],
+								[IfElse ( EQ(Par.func, 6), //
+									[ //here
+									],
+									[IfElse ( EQ( Par.func, 7), //
+										[ //here
+										],
+										[IfElse ( EQ( Par.func, 8), //
 											[ //here
 											],
 											[ // here
