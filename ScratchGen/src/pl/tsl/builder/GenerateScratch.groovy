@@ -1,14 +1,14 @@
-// This script is used to generate Scratch json scripts to easier manage bigger projects
+// This script is used to generate Scratch json scripts to easier managing bigger projects
 
 package pl.tsl.builder
 
-BigDecimal.metaClass.plus = {Expression x -> new Number(delegate) + x}
-BigDecimal.metaClass.minus = {Expression x -> new Number(delegate) - x}
-BigDecimal.metaClass.multiply = {Expression x -> new Number(delegate) * x}
-BigDecimal.metaClass.div = {Expression x -> new Number(delegate) / x}
-BigDecimal.metaClass.mod = {Expression x -> new Number(delegate) % x}
-BigDecimal.metaClass.or = {Expression x -> new Number(delegate) | x}
-BigDecimal.metaClass.and = {Expression x -> new Number(delegate) & x}
+BigDecimal.metaClass.plus = {Expression x -> if(x.getClass() == Number) new Number(delegate + x.val) else new Number(delegate) + x}
+BigDecimal.metaClass.minus = {Expression x -> if(x.getClass() == Number) new Number(delegate - x.val) else new Number(delegate) - x}
+BigDecimal.metaClass.multiply = {Expression x -> if(x.getClass() == Number) new Number(delegate * x.val) else new Number(delegate) * x}
+BigDecimal.metaClass.div = {Expression x -> if(x.getClass() == Number) new Number(delegate / x.val) else new Number(delegate) / x}
+BigDecimal.metaClass.mod = {Expression x -> if(x.getClass() == Number) new Number(delegate % x.val) else new Number(delegate) % x}
+BigDecimal.metaClass.or = {Expression x -> if(x.getClass() == Number) new Number(delegate | x.val) else new Number(delegate) | x}
+BigDecimal.metaClass.and = {Expression x -> if(x.getClass() == Number) new Number(delegate & x.val) else new Number(delegate) & x}
 
 class Expression {
 	String name
@@ -44,6 +44,13 @@ class Number extends Expression {
 	BigDecimal val
 	public Number(BigDecimal v) { super("n"); val = v }
 	public String toString() { return val.toString() }
+	
+	Number plus(Number op) { new Number( this.val + op.val) }
+	Number minus(Number op) { new Number( this.val - op.val) }
+	Number multiply(Number op) { new Number( this.val * op.val) }
+	Number div(Number op) { new Number( this.val / op.val) }
+	Number mod(Number op) {	new Number( this.val % op.val) }
+	
 }
 
 class Function extends Expression {
@@ -220,6 +227,7 @@ def Exp = { par -> new ComputeFunction('e ^',par) }
 def Pow10 = { par -> new ComputeFunction('10 ^',par) }
 def Round = { par -> new Function('rounded', [par]) }
 def Rnd = { from, to -> new Function('randomFrom:to:',[from,to]) }
+def Rnd01 = Rnd(0.0,1000.0) / 1000.0 
 
 def IfElse = { cond,op1,op2 -> new Command('doIfElse',cond,op1,op2) }
 def If = { cond,op1 -> new Command('doIfElse',cond,op1) }
@@ -250,16 +258,232 @@ def AM = 		N(0.000000000465661287524579692410575)
 def R2D	=		N(57.295779513082320876798154814105) // rad to deg conversion
 def D2R = 		N(0.01745329251994329576923690768489) // deg to rad conversion
 
-
 // Your script generation goes here
 
 Scripts([
 	
-	Def("suma", 'suma %n i %n do zmiennej %m.var',['X','Y','suma'],
-		[V.set( Par.suma, Par.X + Par.Y )]
+	Def("pow", 'power %n ^ %n into %m.var',['X','A','VAR'],
+		[ V.set( Par.VAR, Exp( Par.A * Ln( Par.X)))
+		]
+	),
+
+	Def("sinh", 'sinh %n into %m.var',['X','VAR'], // Result in Radians
+		[ V.set( Par.VAR, 0.5 * ( Exp(Par.X) - Exp( 0.0 - Par.X)))
+		]
 	),
 	
+	Def("cosh", 'cosh %n into %m.var',['X','VAR'], // Result in Radians
+		[ V.set( Par.VAR, 0.5 * ( Exp(Par.X) + Exp( 0.0 - Par.X)))
+		]
+	),
+	
+	Def("atan2", 'atan2 %n %n into %m.var',['Y','X','VAR'], // Result in Degrees
+		[ IfElse( GT( Par.X, 0.0),
+			[ V.set( Par.VAR, ATan(Par.Y / Par.X))],
+			[ IfElse( LT( Par.X, 0.0),
+				[ IfElse( GT( Par.Y, 0.0) | EQ( Par.Y, 0.0),
+					[ V.set( Par.VAR, 180.0 + ATan(Par.Y / Par.X)) ],
+					[ V.set( Par.VAR, -180.0 + ATan(Par.Y / Par.X))]
+				  )
+				],
+				[ IfElse( GT( Par.Y, 0.0),
+					[ V.set( Par.VAR, 90.0)],
+					[ IfElse( LT( Par.Y, 0.0),
+						[ V.set( Par.VAR, -90.0)],
+						[ V.set( Par.VAR, 0.0)]
+					  ) 
+					]
+				 )
+				]
+				) 
+			]
+		  )
+		]
+	),
+
+	Def("calc_0_9", 'calculate 0-9 %n %n %n',['func','X','Y'],
+	[
+		IfElse( EQ( Par.func,0), // Linear
+			[ V.x << Par.X,
+			  V.y << Par.Y
+			],
+			[IfElse ( EQ( Par.func, 1), // Sinusoidal
+				[ V.x << Sin( R2D * Par.X),
+				  V.y << Sin( R2D * Par.Y)
+				],
+				[IfElse ( EQ( Par.func, 2), // Spherical
+					[ V.x << Par.X / V.r2,
+					  V.y << Par.Y / V.r2
+					],
+					[IfElse ( EQ( Par.func, 3), // Swirl
+						[ V.par3 << R2D * V.r2,
+						  V.par1 << Sin( V.par3 ),
+						  V.par2 << Cos( V.par3 ),
+						  V.x << V.par1 * Par.X - V.par2 * Par.Y,
+						  V.y << V.par2 * Par.X + V.par1 * Par.Y
+						],
+						[IfElse ( EQ( Par.func, 4), // Horseshoe
+							[ V.x << ( (Par.X - Par.Y) * ( Par.X + Par.Y) ) / V.r,
+							  V.y << (2.0 * Par.X * Par.Y) / V.r	
+							],
+							[IfElse ( EQ( Par.func, 5), // Polar
+								[ V.x << V.atan2xy * M_1_PI * D2R,
+								  V.y << V.r - 1.0
+								],
+								[IfElse ( EQ(Par.func,6), // Handkerchief
+									[ V.par1 << V.r * R2D,
+									  V.x << V.r * Sin( V.atan2xy + V.par1),
+									  V.y << V.r * Cos( V.atan2xy - V.par1),
+									],
+									[IfElse ( EQ( Par.func,7), // Heart
+										[ V.par1 << V.r * V.atan2xy,
+										  V.x << V.r * Sin(V.par1),
+										  V.y << -(V.r) * Cos(V.par1)
+										],
+										[IfElse ( EQ( Par.func,8), // Disc
+											[ V.par1 << D2R * V.atan2xy * M_1_PI,
+											  V.par2 << M_PI * R2D * V.r,
+											  V.x << Sin(V.par2) * V.par1,
+											  V.y << Cos(V.par2) * V.par1,
+											],
+											[ V.par1 << R2D * V.r,
+											  V.x << (Cos(V.atan2xy) + Sin(V.par1)) / V.r, // Spiral
+											  V.y << (Sin(V.atan2xy) - Cos(V.par2)) / V.r
+											]
+										)]
+									)]
+								)]
+							)]
+						)]
+					)]
+				)]	  	
+			)]
+		)
+	]
+	),
+
+	Def("calc_10_19", 'calculate 10-19 %n %n %n',['func','X','Y'],
+	[
+		IfElse( EQ( Par.func,10), // Hyperbolic
+			[ V.x << Sin(V.atan2xy) / V.r,
+			  V.y << Cos(V.atan2xy) / V.r
+			],
+			[IfElse ( EQ( Par.func, 11), // Diamond
+				[ V.par1 << R2D * V.r,
+				  V.par2 << Sin(V.par1),
+				  V.par3 << Cos(V.par1),
+				  V.x << Sin(V.atan2xy) * V.par3,
+				  V.y << Cos(V.atan2xy) * V.par2	
+				],
+				[IfElse ( EQ( Par.func, 12), // Ex
+					[ V.par1 << R2D * V.r,
+					  V.par2 << Sin(V.atan2xy + V.par1),
+					  V.par3 << Cos(V.atan2xy - V.par1),
+					  V.par4 << V.par2 * V.par2 * V.par2 * V.r,
+					  V.par5 << V.par3 * V.par3 * V.par3 * V.r,
+					  V.x << V.par4 + V.par5,
+					  V.y << V.par4 - V.par5
+					],
+					[IfElse ( EQ( Par.func, 13), // Julia
+						[ V.par1 << Sqrt(V.r),
+						  V.par2 << 0.5 * V.atan2xy + (Rnd(0,1) * 180.0),
+						  V.x << V.par1 * Cos(V.par2),
+						  V.y << V.par1 * Sin(V.par2)	
+						],
+						[IfElse ( EQ( Par.func, 14), // Bent 
+							[ IfElse( LT(Par.X,0), [V.x << Par.X * 2.0], [ V.x << Par.X]),
+							  IfElse( LT(Par.Y,0), [V.y << Par.Y / 2.0], [ V.y << Par.Y])
+							],
+							[IfElse ( EQ( Par.func, 15), // Waves
+								[ 	V.x << Par.X + V._b * Sin( R2D * Par.Y * (1.0 / (V._c * V._c)) ),
+									V.y << Par.Y + V._e * Sin( R2D * Par.X * (1.0 / (V._f * V._f)) ),
+								],
+								[IfElse ( EQ(Par.func, 16), // Fisheye 
+									[ V.par1 << 2.0 / (V.r + 1.0),
+									  V.x << V.par1 * Par.Y,
+									  V.y << V.par1 * Par.X
+									],
+									[IfElse ( EQ( Par.func, 17), // Popcorn
+										[ V.par1 << R2D * 3.0,
+										  V.x << Par.X + V._c * Sin(R2D * Tan(V.par1 * Par.Y)),
+										  V.y << Par.Y + V._f * Sin(R2D * Tan(V.par1 * Par.X)),
+										],
+										[IfElse ( EQ( Par.func, 18), // Exponential 
+											[ V.par1 << Exp(Par.X - 1.0),
+											  V.par2 << R2D * M_PI * Par.Y,
+											  V.x << V.par1 * Cos(V.par2),
+											  V.y << V.par1 * Sin(V.par2)	
+											],
+											[ V.par1 << Sin(V.atan2xy), // Power 
+											  Call("pow",[V.r, V.par1, S.par2]),
+											  V.x << V.par2 * Cos(V.atan2xy),
+											  V.y << V.par2 * V.par1
+											]
+										)]
+									)]
+								)]
+							)]
+						)]
+					)]
+				)]
+			)]
+		)
+	]
+	),
+
+	Def("calc_20_29", 'calculate 20-29 %n %n %n',['func','X','Y'],
+	[
+		IfElse( EQ( Par.func,20), //
+			[ //here
+			],
+			[IfElse ( EQ( Par.func, 21), //
+				[ //here
+				],
+				[IfElse ( EQ( Par.func, 22), //
+					[ //here
+					],
+					[IfElse ( EQ( Par.func, 23), //
+						[ //here
+						],
+						[IfElse ( EQ( Par.func, 24), //
+							[ //here
+							],
+							[IfElse ( EQ( Par.func, 25), //
+								[ //here
+								],
+								[IfElse ( EQ(Par.func, 26), //
+									[ //here
+									],
+									[IfElse ( EQ( Par.func, 27), //
+										[ //here
+										],
+										[IfElse ( EQ( Par.func, 28), //
+											[ //here
+											],
+											[ // here
+											]
+										)]
+									)]
+								)]
+							)]
+						)]
+					)]
+				)]
+			)]
+		)
+	]
+	),
+
+    Script([  // precalculations
+
+	])
+	
+	
+/*	,
+
 	Script([
+		
+		
 		
 		V.blah << V.parameter, 
 		V.blah <<  V.blah,
@@ -276,6 +500,6 @@ Scripts([
 		)
 
 	])
-	
+*/	
 	
 ])
