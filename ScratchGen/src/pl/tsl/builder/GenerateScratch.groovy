@@ -137,10 +137,9 @@ class VariableG extends Expression {
 	VariableG next() { changeme(1.0); this }
 	VariableG prev() { changeme(-1.0); this }
 	
-	VariableS leftShift(Expression ex) {
-		return new VariableS(nameclean,ex)
-	}
-	
+	VariableS leftShift(Expression ex) { return new VariableS(nameclean,ex) }
+	VariableS leftShift(BigDecimal n) { return new VariableS(nameclean,new Number(n)) }
+		
 	public String toString() { 
 		if(change) 
 			return '["changeVar:by:", ' + name + ', ' + changeval.toString() + ']'
@@ -206,7 +205,7 @@ def Call = { alias, List pars ->
 def V = new Var() // Variable
 def Par = new BlockParameter() // Block Parameter
 def N = { x -> new Number(x) } // number
-def S = new StringVar() // string
+def S = new StringVar() // string, used in function call for naming variables in %m.val type
 def LT = { l, r -> new Function('<',[l,r]) }
 def GT = { l, r -> new Function('>',[l,r]) }
 def EQ = { l, r -> new Function('=',[l,r]) }
@@ -233,30 +232,30 @@ def IfElse = { cond,op1,op2 -> new Command('doIfElse',cond,op1,op2) }
 def If = { cond,op1 -> new Command('doIfElse',cond,op1) }
 
 // Math aliases
-def M_E = 		N(2.7182818284590452354)
-def M_LOG2E = 	N(1.4426950408889634074)
-def M_LOG10E = 	N(0.43429448190325182765)
-def M_LN2 =		N(0.69314718055994530942)
-def M_LN10 =	N(2.30258509299404568402)
-def M_PI =		N(3.14159265358979323846)
-def M_PI_2 =	N(1.57079632679489661923)
-def M_PI_4 =	N(0.78539816339744830962)
-def M_1_PI =	N(0.31830988618379067154)
-def M_2_PI =	N(0.63661977236758134308)
-def M_2_SQRTPI =N(1.12837916709551257390)
-def M_SQRT2 =	N(1.41421356237309504880)
-def M_SQRT1_2 =	N(0.7071067811865475244)
-def M_2PI =     N(6.283185307179586476925286766559)
-def M_3PI_4 =   N(2.3561944901923449288469825374596)
-def M_SQRT3 =   N(1.7320508075688772935274463415059)
-def M_SQRT3_2 = N(0.86602540378443864676372317075249)
-def M_SQRT5 =   N(2.2360679774997896964091736687313)
-def M_PHI =     N(1.61803398874989484820458683436563) // golden ratio
-def M_1_2PI =   N(0.1591549430918953357688837633725)
-def IM =		N(2147483647.0)
-def AM = 		N(0.000000000465661287524579692410575)
-def R2D	=		N(57.295779513082320876798154814105) // rad to deg conversion
-def D2R = 		N(0.01745329251994329576923690768489) // deg to rad conversion
+def M_E = 		2.7182818284590452354
+def M_LOG2E = 	1.4426950408889634074
+def M_LOG10E = 	0.43429448190325182765
+def M_LN2 =		0.69314718055994530942
+def M_LN10 =	2.30258509299404568402
+def M_PI =		3.14159265358979323846
+def M_PI_2 =	1.57079632679489661923
+def M_PI_4 =	0.78539816339744830962
+def M_1_PI =	0.31830988618379067154
+def M_2_PI =	0.63661977236758134308
+def M_2_SQRTPI =1.12837916709551257390
+def M_SQRT2 =	1.41421356237309504880
+def M_SQRT1_2 =	0.7071067811865475244
+def M_2PI =     6.283185307179586476925286766559
+def M_3PI_4 =   2.3561944901923449288469825374596
+def M_SQRT3 =   1.7320508075688772935274463415059
+def M_SQRT3_2 = 0.86602540378443864676372317075249
+def M_SQRT5 =   2.2360679774997896964091736687313
+def M_PHI =     1.61803398874989484820458683436563 // golden ratio
+def M_1_2PI =   0.1591549430918953357688837633725
+def IM =		2147483647.0
+def AM = 		0.000000000465661287524579692410575
+def R2D	=		57.295779513082320876798154814105 // rad to deg conversion
+def D2R = 		0.01745329251994329576923690768489 // deg to rad conversion
 
 // Your script generation goes here
 
