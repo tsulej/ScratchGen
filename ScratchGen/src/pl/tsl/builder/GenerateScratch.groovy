@@ -226,6 +226,7 @@ def Exp = { par -> new ComputeFunction('e ^',par) }
 def Pow10 = { par -> new ComputeFunction('10 ^',par) }
 def Round = { par -> new Function('rounded', [par]) }
 def Rnd = { from, to -> new Function('randomFrom:to:',[from,to]) }
+def Rnd01 = Rnd(0.001,1.0)
 
 def IfElse = { cond,op1,op2 -> new Command('doIfElse',cond,op1,op2) }
 def If = { cond,op1 -> new Command('doIfElse',cond,op1) }
@@ -364,7 +365,7 @@ Scripts([
 	[
 		IfElse( EQ( Par.func,10), // Hyperbolic
 			[ V.x << Sin(V.atan2xy) / V.r,
-			  V.y << Cos(V.atan2xy) / V.r
+			  V.y << Cos(V.atan2xy) * V.r
 			],
 			[IfElse ( EQ( Par.func, 11), // Diamond
 				[ V.par1 << R2D * V.r,
@@ -463,7 +464,7 @@ Scripts([
 							  V.y << Sin(V._pdj_c * Par.X) - Cos(V._pdj_d * Par.Y),
 							],
 							[IfElse ( EQ( Par.func, 25), // Fan2
-								[ V.par1 << V.atan2xy + V._fan2_y - V._fan2_x * Round( (V.atan2xy + V._fan2_y)/V._fan2_x),
+								[ V.par1 << V.atan2xy + V._fan2_y - V._fan2_x * Floor( (V.atan2xy + V._fan2_y)/V._fan2_x),
 								  V.par2 << 0.5 * V._fan2_x,
 								  IfElse( GT(V.par1, V.par2),
 									  [V.par3 << V.atan2xy - V.par2],
@@ -473,12 +474,160 @@ Scripts([
 								  V.y << V.r * Cos(V.par3)
 								],
 								[IfElse ( EQ(Par.func, 26), // Rings2
+									[ V.par1 << V.r - 2.0 * V._rings2_val * Floor( (V.r + V._rings2_val) / (2.0 * V._rings2_val)) + V.r * (1.0 - V._rings2_val),
+									  V.x << Sin(V.atan2xy) * V.par1,
+									  V.y << Cos(V.atan2xy) * V.par1
+									],
+									[IfElse ( EQ( Par.func, 27), // Eyefish
+										[ V.par1 << 2.0 / (V.r + 1.0),
+										  V.x << Par.X * V.par1,
+										  V.y << Par.Y * V.par1
+										],
+										[IfElse ( EQ( Par.func, 28), // Bubble
+											[ V.par1 << 4.0 / (V.r2 + 4.0),
+											  V.x << V.par1 * Par.X,
+											  V.y << V.par1 * Par.Y
+											],
+											[ V.x << Sin(R2D * Par.X), // Cylinder
+											  V.y << Par.Y
+											]
+										)]
+									)]
+								)]
+							)]
+						)]
+					)]
+				)]
+			)]
+		)
+	]
+	),
+
+	Def("calc_30_39", 'calculate 30-39 %n %n %n',['func','X','Y'],
+	[
+		IfElse( EQ( Par.func,30), // Perspective
+			[ V.par1 << 1.0 / ( V._perspective_dist - Par.Y * V._perspective_vsin),
+			  V.x << V._perspective_dist * Par.X * V.par1,
+			  V.y << V._perspective_vfcos * Par.Y * V.par1
+			],
+			[IfElse ( EQ( Par.func, 31), // Noise
+				[ V.par1 << 2 * M_PI * R2D * Rnd01,
+				  V.par2 << Rnd01,
+				  V.x << Par.X * V.par2 * Cos(V.par1),
+				  V.y << Par.Y * V.par2 * Sin(V.par1)
+				],
+				[IfElse ( EQ( Par.func, 32), // JuliaN
+					[ V.par1 << ( V.atan2yx + 2.0 * M_PI * R2D * Floor( V._julian_power * Rnd01)) / V._julian_power,
+					  Call("pow", [V.r2,V._julian_cn,S.par2]),
+					  V.x << V.par2 * Cos(V.par1),
+					  V.y << V.par2 * Sin(V.par1)
+					],
+					[IfElse ( EQ( Par.func, 33), // JuliaScope
+						[ V.par2 << Floor( V._juliascope_power * Rnd01),
+						  IfElse( EQ( V.par2 % 2, 0.0),
+							  [V.par1 << ( 2.0 * M_PI * R2D * V.par2 + V.atan2yx) / V._juliascope_power],
+							  [V.par1 << ( 2.0 * M_PI * R2D * V.par2 - V.atan2yx) / V._juliascope_power]
+						  ),
+					      Call("pow", [V.r2,V._juliascope_cn,S.par2]),
+					      V.x << V.par2 * Cos(V.par1),
+					      V.y << V.par2 * Sin(V.par1)
+						],
+						[IfElse ( EQ( Par.func, 34), // Blur
+							[ V.par1 << 2 * M_PI * R2D * Rnd01,
+							  V.par2 << Rnd01,
+							  V.x << V.par2 * Cos(V.par1),
+							  V.y << V.par2 * Sin(V.par1)
+							],
+							[IfElse ( EQ( Par.func, 35), // Gaussian
+								[ V.par1 << 2 * M_PI * R2D * Rnd01,
+								  V.par2 << Rnd01 + Rnd01 + Rnd01 + Rnd01 - 2.0,
+								  V.x << V.par2 * Cos(V.par1),
+								  V.y << V.par2 * Sin(V.par1)
+								],
+								[IfElse ( EQ(Par.func, 36), // RadialBlur
+									[ V.par1 << V._weight * (Rnd01 + Rnd01 + Rnd01 + Rnd01 - 2.0),
+									  V.par2 << V.atan2yx + R2D * V._radialblur_spinvar * V.par1,
+									  V.par3 << V._radialblur_zoomvar * V.par1 - 1.0,
+									  V.x << ( V.r * Cos(V.par2) + V.par3 * Par.X) / V._weight,
+									  V.x << ( V.r * Sin(V.par2) + V.par3 * Par.Y) / V._weight,
+									],
+									[IfElse ( EQ( Par.func, 37), // Pie
+										[ V.par1 << R2D * (V._pie_rotation + 2.0 * M_PI * (Floor(Rnd01 * V._pie_slices + 0.5) + Rnd01 * V._pie_thickness) / V._pie_slices),
+										  V.par2 << Rnd01,
+										  V.x << V.par2 * Cos(V.par1),
+										  V.y << V.par2 * Sin(V.par1)
+										],
+										[IfElse ( EQ( Par.func, 38), // Ngon
+											[ V.par1 << V.atan2yx - ( V._ngon_sides * Floor(V.atan2yx / V._ngon_sides)),
+											  If( GT (V.par1, V._ngon_sides / 2.0),
+												  [V.par1 << V.par1 - V._ngon_sides]
+										      ),
+										  	  Call("pow", [V.r2, V._ngon_power, S.par3]),
+											  V.par2 << (V._ngon_corners * (1.0 / Cos(V.par1) - 1.0) + V._ngon_circle) / V.par3,
+											  V.x << Par.X * V.par2,
+											  V.y << Par.Y * V.par2
+											],
+											[ V.par1 << 1.0 + V._curl_c1 * Par.X + V._curl_c2 * (Par.X * Par.X - Par.Y * Par.Y), // Curl
+											  V.par2 << V._curl_c1 * Par.Y + 2.0 * V._curl_c2 * Par.X * Par.Y,
+											  V.par3 << 1.0 / (V.par1 * V.par1 + V.par2 * V.par2),
+											  V.x << (Par.X * V.par1 + Par.Y * V.par2) * V.par3,
+											  V.y << (Par.Y * V.par1 - Par.X * V.par2) * V.par3
+											]
+										)]
+									)]
+								)]
+							)]
+						)]
+					)]
+				)]
+			)]
+		)
+	]
+	),
+
+	Def("calc_40_49", 'calculate 40-49 %n %n %n',['func','X','Y'],
+	[
+		IfElse( EQ( Par.func, 40), // Rectangles
+			[ IfElse( EQ (V._rectangles_x, 0),
+				[ V.x << Par.X],
+				[ V.x << (2.0 * Floor(Par.X / V._rectangles_x) + 1.0) * V._rectangles_x - Par.X ]
+			  ),
+		  	  IfElse( EQ (V._rectangles_y, 0),
+				[ V.y << Par.Y],
+				[ V.y << (2.0 * Floor(Par.Y / V._rectangles_y) + 1.0) * V._rectangles_y - Par.Y ]
+			  )
+			],
+			[IfElse ( EQ( Par.func, 41), // Arch
+				[ V.par1 <<  M_PI * R2D * Rnd01 * V._weight,
+				  V.par2 << Sin(V.par1),
+				  V.par3 << Cos(V.par1),
+				  V.x << V.par2,
+				  V.y << (V.par2 * V.par2) / V.par3
+				],
+				[IfElse ( EQ( Par.func, 42), // Tangent
+					[ V.x << Sin(Par.X * R2D) / Cos(Par.Y * R2D),
+					  V.y << Tan(Par.Y * R2D)
+					],
+					[IfElse ( EQ( Par.func, 43), // Square
+						[ V.x << Rnd01 - 0.5,
+						  V.y << Rnd01 - 0.5
+						],
+						[IfElse ( EQ( Par.func, 44), // Rays
+							[ V.par1 << M_PI * R2D * V._weight * Rnd01,
+							  V.par2 << Tan(V.par1) * V._weight / V.r2,
+							  V.x << V.par2 * Cos(Par.X * R2D),
+							  V.y << V.par2 * Sin(Par.Y * R2D),
+							],
+							[IfElse ( EQ( Par.func, 45), //
+								[ //here
+								],
+								[IfElse ( EQ(Par.func, 46), //
 									[ //here
 									],
-									[IfElse ( EQ( Par.func, 27), //
+									[IfElse ( EQ( Par.func, 47), //
 										[ //here
 										],
-										[IfElse ( EQ( Par.func, 28), //
+										[IfElse ( EQ( Par.func, 48), //
 											[ //here
 											],
 											[ // here
@@ -495,7 +644,7 @@ Scripts([
 	]
 	),
 
-	Def("calc_0_9", 'calculate 0-9 %n %n %n',['func','X','Y'],
+  Def("calc_0_9", 'calculate 0-9 %n %n %n',['func','X','Y'],
 	[
 		IfElse( EQ( Par.func,0), //
 			[ //here
@@ -544,15 +693,174 @@ Scripts([
 		V._blob_bdiff << Rnd(0.8, 1.2) - V._blob_low,
 		V._blob_waves << Rnd(2,7),
 		// PDJ
-		V._pdj_a << R2D * Rnd(-3.0, 3.0),
-		V._pdj_b << R2D * Rnd(-3.0, 3.0),
-		V._pdj_c << R2D * Rnd(-3.0, 3.0),
-		V._pdj_d << R2D * Rnd(-3.0, 3.0),
+		V._pdj_a << R2D * Rnd(-2.99, 2.99),
+		V._pdj_b << R2D * Rnd(-2.99, 2.99),
+		V._pdj_c << R2D * Rnd(-2.99, 2.99),
+		V._pdj_d << R2D * Rnd(-2.99, 2.99),
 		// Fan2
 		V._fan2_x << R2D * M_PI * Rnd(0.04,0.64),
-		V._fan2_y << R2D * Rnd(2,7)
+		V._fan2_y << R2D * Rnd(2,7),
+		// Rings2
+		V._rings2_val << Rnd(0.01,1.44),
+		// Perspective
+		V._perspective_dist << Rnd(0.99,3.01),
+		V.par1 << R2D * M_PI / 2.0 * Rnd(0.3,1.0),
+		V._perspective_vsin << Sin(V.par1),
+		V._perspective_vfcos << V._perspective_dist * Cos(V.par1),
+		// JuliaN
+		V._julian_power << Rnd(4,10),
+		V._julian_dist << Rnd(0.5,2.0),
+		V._julian_cn << V._julian_dist / V._julian_power / 2.0,
+		// JuliaScope
+		V._juliascope_power << Rnd(4,10),
+		V._juliascope_dist << Rnd(0.5,2.0),
+		V._juliascope_cn << V._juliascope_dist / V._juliascope_power / 2.0,
+		// RadialBlur
+		V.par1 << R2D * M_PI / 2.0 * Rnd(-1.01,1.01),
+		V._radialblur_spinvar << Sin(V.par1),
+		V._radialblur_zoomvar << Cos(V.par1),
+		// Pie
+		V._pie_slices << Rnd(3,10),
+		V._pie_rotation << Rnd(-2.01,2.01),
+		V._pie_thickness << Rnd(0.2,0.8),
+		// Ngon
+		V._ngon_sides << 2.0 * M_PI * R2D / Rnd(3,9),
+		V._ngon_power << Rnd(1.01, 4.0) / 2.0,
+		V._ngon_circle << Rnd(0.5, 1.5),
+		V._ngon_corners << Rnd(0.5, 1.5),
+		// Curl
+		V._curl_c1 << Rnd(0.1, 0.7),
+		V._curl_c2 << Rnd(0.1, 0.7),
+		// Rectangles
+		V._rectangles_x << Rnd(0.01,1),
+		V._rectangles_y << Rnd(0.01,1),
+		// Disc2
+		V._disc2_timespi << Rnd(-2.01,2.01) * M_PI * R2D,
+		V.par1 << Rnd(-8.01,8.01),
+		V._disc2_sinadd << Sin(V.par1 * R2D),
+		V._disc2_cosadd << Cos(V.par1 * R2D) - 1.0,
+		If( GT ( V.par1, 2.0 * M_PI),
+			[ V.par2 << 1.0 - 2 * M_PI + V.par1,
+				V._disc2_sinadd << V._disc2_sinadd * V.par2,
+				V._disc2_cosadd << V._disc2_cosadd * V.par2
+			]
+		),
+		If( LT ( V.par1, -2.0 * M_PI),
+			[ V.par2 << 1.0 + 2 * M_PI + V.par1,
+				V._disc2_sinadd << V._disc2_sinadd * V.par2,
+				V._disc2_cosadd << V._disc2_cosadd * V.par2
+			]
+		)
 	])
 	
+	
+		 /*
+		  * 
+	
+						["append:toList:", ["\/", ["randomFrom:to:", 0, 1000], 1000], "parameters"],
+						["append:toList:", ["*", ["randomFrom:to:", 1, 6], 0.25], "parameters"],
+						["append:toList:", ["\/", -1, ["\/", ["randomFrom:to:", 1, 10000], 1000]], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 0, 20000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 0, 20000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["randomFrom:to:", 3, 8], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -500, 200], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 300, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 0, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 500, 2000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 500, 2000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1500, 1500], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1500, 1500], 1000], "parameters"],
+						["append:toList:",
+							["*",
+								["*", -1, ["readVariable", "pi2"]],
+								["\/", ["randomFrom:to:", -1500, 1500], 1000]],
+							"parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -2500, 2500], 1000], "parameters"],
+						["append:toList:", ["randomFrom:to:", 1, 5], "parameters"],
+						["append:toList:",
+							["\/", ["\/", ["randomFrom:to:", 1000, 3000], 1000], ["getLine:ofList:", 47, "parameters"]],
+							"parameters"],
+						["append:toList:",
+							["\/", ["\/", ["randomFrom:to:", -500, 500], 1000], ["getLine:ofList:", 47, "parameters"]],
+							"parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -2500, 2500], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -2500, 2500], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 800, 9000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 800, 9000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -3000, 3000], 1000], "parameters"],
+						["append:toList:",
+							["computeFunction:of:", "cos", ["*", ["readVariable", "radtodeg"], ["getLine:ofList:", 54, "parameters"]]],
+							"parameters"],
+						["setLine:ofList:to:",
+							54,
+							"parameters",
+							["computeFunction:of:", "sin", ["*", ["readVariable", "radtodeg"], ["getLine:ofList:", 54, "parameters"]]]],
+						["append:toList:", ["\/", ["randomFrom:to:", -3000, 3000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -2000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -2000, 2000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -500, 500], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -500, 500], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 0, 2000], 1000], "parameters"],
+						["append:toList:", ["*", 360, ["\/", ["randomFrom:to:", -3000, 3000], 1000]], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 1000, 3000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 0, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -400, 400], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -400, 400], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -5000, 5000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 0, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 0, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -800, 800], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -4000, 4000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -3000, 3000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -500, 500], 1000], "parameters"],
+						["append:toList:", ["randomFrom:to:", 1, 6], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -3000, 3000], 1000], "parameters"],
+						["append:toList:", ["randomFrom:to:", 2, 7], "parameters"],
+						["append:toList:",
+							["*",
+								["randomFrom:to:", 2, 7],
+								["-", ["*", ["randomFrom:to:", 0, 1], 2], 1]],
+							"parameters"],
+						["append:toList:",
+							["\/",
+								["\/", ["\/", ["randomFrom:to:", 1000, 4000], 1000], ["getLine:ofList:", 86, "parameters"]],
+								2],
+							"parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -3000, 3000], 1000], "parameters"],
+						["append:toList:", ["randomFrom:to:", 1, 6], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -500, 500], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 0, 4000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 500, 1500], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 0, 4000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 500, 1500], 1000], "parameters"],
+						["append:toList:", ["randomFrom:to:", 3, 6], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 100, 800], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", 500, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
+						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"]]
+		  */
+
 	
 /*	,
 
