@@ -261,7 +261,21 @@ def D2R = 		0.01745329251994329576923690768489 // deg to rad conversion
 // Your script generation goes here
 
 // do not display below variables, they are already defined
-VariableG.varSet.varIgnore += ['x','y','r','r2','par1','par2','par3','par4','par5','atan2xy','atan2yx','_a','_b','_c','_d','_e','_f','_weight'] as Set
+VariableG.varSet.varIgnore += ['x','y','r','r2','par1','par2','par3','par4','par5','atan2xy','atan2yx','_a','_b','_c','_d','_e','_f','_weight', 'temp_x','temp_y'] as Set
+def fractal_flame = false // determine which script generate (difference in precalculations, eg. preblur
+
+def forFlame = {
+	if(fractal_flame) {
+	  return [
+		  V.temp_x << V._weight * V.x,
+		  V.temp_y << V._weight * V.y,
+		  V.x << 0.0,
+		  V.y << 0.0 
+	  ]	
+	} else {
+	  return []
+	}
+}
 
 Scripts([
 	
@@ -785,6 +799,129 @@ Scripts([
 	]
 	),
 
+	Def("calc_60_69", 'calculate 60-69 %n %n %n',['func','X','Y'],
+	[
+		IfElse( EQ( Par.func,60), // Curve
+			[ V.x << Par.X + V._curve_xamp * Exp( -(Par.Y) * Par.Y / V._curve_xlength),
+			  V.y << Par.Y + V._curve_yamp * Exp( -(Par.X) * Par.X / V._curve_ylength)
+			],
+			[IfElse ( EQ( Par.func, 61), // Edisc
+				[ V.par1 << V.r2 + 1.0,
+				  V.par2 << Par.X + Par.X,
+				  V.par3 << 0.5 * (Sqrt(V.par1 + V.par2) + Sqrt(V.par1 - V.par2)), //xmax
+				  V.par1 << R2D * Ln(V.par3 + Sqrt(V.par3 - 1.0)), //a1
+				  V.par2 << D2R * -(ACos(Par.X / V.par3)), //a2
+				  Call("cosh",[V.par2, S.par3]), // cshu
+				  Call("sinh",[V.par2, S.par4]), // snhu
+				  V.par5 << Sin(V.par1),
+				  If( GT(Par.Y,0.0), [V.par5 << -(V.par5)]),
+				  V.x << V.par3 * Cos(V.par1) / 11.57034632,
+				  V.y << V.par4 * V.par5 / 11.57034632
+				],
+				[IfElse ( EQ( Par.func, 62), // Elliptic
+					[ V.par1 << V.r2 + 1.0,
+					  V.par2 << Par.X + Par.X,
+				      V.par3 << 0.5 * (Sqrt(V.par1 + V.par2) + Sqrt(V.par1 - V.par2)), //xmax
+					  V.par1 << Par.X / V.par3, // a
+					  V.par2 << 1.0 - V.par1 * V.par1, // b
+					  V.par5 << V.par3 - 1.0, // ssx
+					  IfElse( LT(V.par2,0),[V.par2 << 0.0], [V.par2 << Sqrt(V.par2)]),
+					  IfElse( LT(V.par5,0),[V.par5 << 0.0], [V.par5 << Sqrt(V.par5)]),
+					  Call("atan2",[V.par1, V.par2, S.par4]),
+					  V.x << (D2R / M_PI_2) * V.par4,
+					  IfElse( GT(Par.Y,0),
+						  [ V.y << Ln(V.par3 + V.par5)],
+						  [ V.y << -(Ln(V.par3 + V.par5))]
+					  )
+					],
+					[IfElse ( EQ( Par.func, 63), // Esher
+						[ V.par1 << D2R * V.atan2yx, // a
+						  V.par2 << 0.5 * Ln(V.r2), // lnr
+						  V.par3 << Exp(V._esher_vc * V.par2 - V._esher_vd * V.par1), //m
+						  V.par4 << R2D * (V._esher_vc * V.par1 + V._esher_vd * V.par2),//n
+						  V.x << V.par3 * Cos(V.par4),
+						  V.y << V.par3 * Sin(V.par4)
+						],
+						[IfElse ( EQ( Par.func, 64), // Foci
+							[ V.par1 << 0.5 * Exp(Par.X),
+							  V.par2 << 0.25 / V.par1,
+							  V.par3 << R2D * Par.Y,
+							  V.par4 << 1.0 / (V.par1 + V.par2 - Cos(V.par3)),
+							  V.x << V.par4 * (V.par1 - V.par2),
+							  V.y << V.par4 * Sin(V.par3)
+							],
+							[IfElse ( EQ( Par.func, 65), // Lazysuzan
+								[ V.par1 << Par.X - V._lazysusan_x, //x
+								  V.par2 << Par.Y + V._lazysusan_y, //y
+								  V.par3 << Sqrt(V.par1*V.par1 + V.par2*V.par2), // r
+								  IfElse( LT(V.par3, V._weight),
+									  [ Call("atan2",[V.par2,V.par1,S.par4]),
+										V.par5 << V.par4 + V._lazysusan_spin + V._lazysusan_twist * (V._weight - V.par3),
+										V.x << V.par3 * Cos(V.par5) + V._lazysusan_x / V._weight,
+										V.y << V.par3 * Sin(V.par5) - V._lazysusan_y / V._weight
+									  ],
+									  [ V.par5 << 1.0 + V._lazysusan_space / V.par3,
+										V.x << V.par5 * V.par1 + V._lazysusan_x / V._weight,
+										V.y << V.par5 * V.par2 - V._lazysusan_y / V._weight
+								      ]
+								  )
+								],
+								[IfElse ( EQ(Par.func, 66), // Loonie
+									[ V.par1 << V._weight * V._weight,
+									  IfElse( LT(V.r2, V.par1),
+										  [ V.par2 << Sqrt(V.par1 / V.r2 - 1.0),
+											V.x << V.par2 * Par.X,
+											V.y << V.par2 * Par.Y
+										  ],
+										  [ V.x << Par.X,
+											V.y << Par.Y 
+										  ]
+									  )
+									],
+									[IfElse ( EQ( Par.func, 67), // Preblur
+										[ V.par1 << Rnd01 + Rnd01 + Rnd01 + Rnd01 - 2.0,
+										  V.par2 << 2.0 * M_PI * R2D * Rnd01,
+										  
+										  V.x << V.par1 * Cos(V.par2),
+										  V.y << V.par1 * Sin(V.par2),
+										] + forFlame(),
+										[IfElse ( EQ( Par.func, 68), // Modulus
+											[ V.par1 << 2.0 * V._modulus_x,
+											  V.par2 << 2.0 * V._modulus_y,
+											  IfElse( GT(Par.X, V._modulus_x),
+												  [ V.x << -(V._modulus_x) + (Par.X + V._modulus_x) % V.par1 ],
+												  [ IfElse( LT(Par.X, -(V._modulus_x)),
+													  [ V.x << V._modulus_x - (V._modulus_x - Par.X) % V.par1],
+													  [ V.x << Par.X]
+												  )]
+											  ),
+										  	  IfElse( GT(Par.Y, V._modulus_y),
+												[ V.y << -(V._modulus_y) + (Par.Y + V._modulus_y) % V.par2 ],
+												[ IfElse( LT(Par.Y, -(V._modulus_y)),
+												  [ V.y << V._modulus_y - (V._modulus_y - Par.Y) % V.par2],
+												  [ V.y << Par.Y]
+												)]
+											  )
+											],
+											[ IfElse( LT(V._oscilloscope_damping,0.1),  // Oscilloscope
+												[ V.par1 << V._oscilloscope_amplitude * Cos(V._oscilloscope_frequency * Par.X) + V._oscilloscope_separation ],
+												[ V.par1 << V._oscilloscope_amplitude * Exp(-(Abs(Par.X))*V._oscilloscope_damping) * Cos(V._oscilloscope_frequency * Par.X) + V._oscilloscope_separation ] 
+											  ),
+										      V.x << Par.X,
+										      IfElse( GT(Abs(Par.Y),V.par1),[ V.y << -(Par.Y)], [ V.y << Par.Y])
+											]
+										)]
+									)]
+								)]
+							)]
+						)]
+					)]
+				)]
+			)]
+		)
+	]
+	),
+
 	Def("calc_0_9", 'calculate 0-9 %n %n %n',['func','X','Y'],
 	[
 		IfElse( EQ( Par.func,0), //
@@ -919,7 +1056,30 @@ Scripts([
 		V._cpow_power << Rnd(1,5),
 		V._cpow_r << Rnd(1.01,3.0) / V._cpow_power,
 		V._cpow_i << Rnd(-0.5,0.5) / V._cpow_power,
-		V._cpow_va << 2.0 * M_PI / V._cpow_power
+		V._cpow_va << 2.0 * M_PI / V._cpow_power,
+		// Curve
+		V._curve_xamp << Rnd(-2.5,2.5),
+		V._curve_yamp << Rnd(-2.5,2.5),
+		V._curve_xlength << Rnd(0.8,7),
+		V._curve_ylength << Rnd(0.8,7),
+		// Esher
+		V.par1 << Rnd(-3.01,3.01) * R2D,
+		V._esher_vd << 0.5 * Sin(V.par1),
+		V._esher_vc << 0.5 * (1.0 + Cos(V.par1)),
+		// Lazysuzan
+		V._lazysusan_spin << R2D * Rnd(-3.01,3.01), // in degrees
+		V._lazysusan_space << Rnd(-2.01,1.01), // in degrees
+		V._lazysusan_twist << R2D * Rnd(-2.01,2.01), // in degrees
+		V._lazysusan_x << Rnd(-0.5,0.5),
+		V._lazysusan_y << Rnd(-0.5,0.5),
+		// Modulus
+		V._modulus_x << Rnd(-1.01,1.01),
+		V._modulus_y << Rnd(-1.01,1.01),
+		// Oscilloscope
+		V._oscilloscope_separation << Rnd(0.01, 2.01),
+		V._oscilloscope_frequency << 360.0 * Rnd(-3.01,3.01),
+		V._oscilloscope_amplitude << Rnd(1.01,3.01),
+		V._oscilloscope_damping << Rnd(0,1)
 	])
 
 
@@ -927,29 +1087,6 @@ Scripts([
 		 /*
 		  * 
 
-						["append:toList:", ["\/", ["randomFrom:to:", -2500, 2500], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -2500, 2500], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 800, 9000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 800, 9000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -3000, 3000], 1000], "parameters"],
-						["append:toList:",
-							["computeFunction:of:", "cos", ["*", ["readVariable", "radtodeg"], ["getLine:ofList:", 54, "parameters"]]],
-							"parameters"],
-						["setLine:ofList:to:",
-							54,
-							"parameters",
-							["computeFunction:of:", "sin", ["*", ["readVariable", "radtodeg"], ["getLine:ofList:", 54, "parameters"]]]],
-						["append:toList:", ["\/", ["randomFrom:to:", -3000, 3000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -2000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -2000, 2000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -500, 500], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -500, 500], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 0, 2000], 1000], "parameters"],
-						["append:toList:", ["*", 360, ["\/", ["randomFrom:to:", -3000, 3000], 1000]], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 1000, 3000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 0, 1000], 1000], "parameters"],
 						["append:toList:", ["\/", ["randomFrom:to:", -400, 400], 1000], "parameters"],
 						["append:toList:", ["\/", ["randomFrom:to:", -400, 400], 1000], "parameters"],
 						["append:toList:", ["\/", ["randomFrom:to:", -5000, 5000], 1000], "parameters"],
