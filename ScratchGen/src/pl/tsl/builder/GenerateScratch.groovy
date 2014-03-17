@@ -33,7 +33,7 @@ class Expression {
 	Expression and(BigDecimal op) { this & new Number(op) }
 	
 	Expression negative() { new Number(-1) * this }
-	Expression bitwiseNegate() { new ComputeFunction('not',this) }
+	Expression bitwiseNegate() { new Function('not',[this]) }
 	
 	public Expression(String n) { name = '"' + n + '"'; nameclean = n }
 	public String toString() { return name } 
@@ -669,7 +669,123 @@ Scripts([
 	]
 	),
 
-  Def("calc_0_9", 'calculate 0-9 %n %n %n',['func','X','Y'],
+  Def("calc_50_59", 'calculate 50-59 %n %n %n',['func','X','Y'],
+	[
+		IfElse( EQ( Par.func,50), // Supershape
+			[ V.par1 << M_PI_4 * R2D + V._supershape_pm_4 * V.atan2yx,
+			  Call("pow",[Abs(Cos(V.par1)),V._supershape_n2, S.par3]),
+			  Call("pow",[Abs(Sin(V.par1)),V._supershape_n3, S.par4]),
+			  Call("pow",[ V.par3 + V.par4,V._supershape_pneg1_n1, S.par5]),
+			  V.par2 << ((V._supershape_rnd * Rnd01 + (1.0 - V._supershape_rnd) * V.r) - V._supershape_holes) * V.par5 / V.r,
+			  V.x << V.par2 * Par.X,
+			  V.y << V.par2 * Par.Y 
+			],
+			[IfElse ( EQ( Par.func, 51), // Flower
+				[ V.par1 << (Rnd01 - V._flower_holes) * Cos(V._flower_petals * V.atan2yx) / V.r,
+				  V.x << V.par1 * Par.X,
+				  V.y << V.par1 * Par.Y
+				],
+				[IfElse ( EQ( Par.func, 52), // Conic
+					[ V.par1 << (Rnd01 - V._conic_holes) * V._conic_eccentricity / (1.0 + V._conic_eccentricity * (Par.X / V.r)) / V.r,
+					  V.x << V.par1 * Par.X,
+					  V.y << V.par1 * Par.Y
+					],
+					[IfElse ( EQ( Par.func, 53), // Parabola
+						[ V.par1 << Sin(R2D * V.r),
+						  V.x << V._parabola_height * V.par1 * V.par1 * Rnd01,
+						  V.y << V._parabola_weight * Cos(R2D * V.r) * Rnd01
+						],
+						[IfElse ( EQ( Par.func, 54), // Bent2
+							[ IfElse( LT(Par.X, 0), [ V.par1 << Par.X * V._bent2_x ],[ V.par1 << Par.X] ),
+							  IfElse( LT(Par.Y, 0), [ V.par2 << Par.Y * V._bent2_y ],[ V.par2 << Par.Y] ),
+							  V.x << V.par1,
+							  V.y << V.par2
+							],
+							[IfElse ( EQ( Par.func, 55), // Bipolar
+								[ V.par1 << V.r2 + 1.0,
+								  V.par2 << Par.X + Par.X,
+								  Call("atan2",[2.0 * Par.Y, V.r2 - 1.0, S.par3]),
+								  V.par3 << 0.5 * D2R * V.par3 + V._bipolar_shift,
+								  IfElse( GT(V.par3, M_PI_2), [V.par3 << -M_PI_2 + (V.par3 +M_PI_2) % M_PI],
+								    [If ( LT(V.par3, -M_PI_2), [ V.par3 << M_PI_2 - (M_PI_2 - V.par3) % M_PI ])]
+								  ),
+							      V.x << 0.25 * M_2_PI * Ln( (V.par1 + V.par2) / (V.par1 - V.par2)),
+							      V.y << M_2_PI * V.par3
+								],
+								[IfElse ( EQ(Par.func, 56), // Boarders
+									[ V.par1 << Round(Par.X),
+									  V.par2 << Round(Par.Y),
+									  V.par3 << Par.X - V.par1,
+									  V.par4 << Par.Y - V.par2,
+									  IfElse( GT( Rnd01, 0.75),
+										  [ V.x << 0.5 * V.par3 + V.par1,
+											V.y << 0.5 * V.par4 + V.par2
+									      ],
+									      [ IfElse( ~(LT(Abs(V.par3),Abs(V.par4))),
+											  [ IfElse( LT(V.par3,0),
+												  [ V.x << 0.5 * V.par3 + V.par1 - 0.25,
+													V.y << 0.5 * V.par4 + V.par2 - 0.25 * V.par4 / V.par3 
+												  ],
+												  [ V.x << 0.5 * V.par3 + V.par1 + 0.25,
+													V.y << 0.5 * V.par4 + V.par2 + 0.25 * V.par4 / V.par3
+												  ]
+												)  
+											  ],
+											  [ IfElse( LT(V.par4,0),
+												  [ V.y << 0.5 * V.par4 + V.par2 - 0.25,
+													V.x << 0.5 * V.par3 + V.par1 - V.par3 / V.par4 * 0.25 
+												  ],
+												  [ V.y << 0.5 * V.par4 + V.par2 + 0.25,
+													V.x << 0.5 * V.par3 + V.par1 + V.par3 / V.par4 * 0.25
+												  ]
+												)
+											  ])
+										  ]
+									  )
+									],
+									[IfElse ( EQ( Par.func, 57), // Butterfly
+										[ V.par1 << Par.Y + Par.Y,
+										  V.par2 << 1.3029400317411197908970256609023 * Sqrt(Abs(Par.Y * Par.X)/(Par.X * Par.X + V.par1 * V.par1)),
+										  V.x << V.par2 * Par.X,
+										  V.y << V.par2 * V.par1
+										],
+										[IfElse ( EQ( Par.func, 58), // Cell
+											[ V.par1 << Floor(Par.X / V._cell_size),
+										      V.par2 << Floor(Par.Y / V._cell_size),
+											  V.par3 << Par.X - V.par1 * V._cell_size,
+											  V.par4 << Par.Y - V.par2 * V._cell_size,
+											  IfElse( LT(V.par2,0),
+												  [ IfElse( LT(V.par1,0),
+													  [ V.par2 << -(2.0 * V.par2 + 1.0), V.par1 << -(2.0 * V.par1 + 1.0) ],
+													  [ V.par2 << -(2.0 * V.par2 + 1.0), V.par1 << 2.0 * V.par1]
+												  )],
+												  [ IfElse( LT(V.par1,0),
+													  [ V.par2 << 2.0 * V.par2, V.par1 << -(2.0 * V.par1 + 1.0)],
+													  [ V.par2 << 2.0 * V.par2, V.par1 << 2.0 * V.par1]
+												  )]
+											  ),
+											  V.x << V.par3 + V.par1 * V._cell_size,
+											  V.y << -(V.par4 + V.par2 * V._cell_size)
+											],
+											[ V.par1 << 0.5 * Ln(V.r2), // CPow
+											  V.par2 << R2D * (V._cpow_r * D2R * V.atan2yx + V._cpow_i * V.par1 + V._cpow_va * Floor(V._cpow_power * Rnd01)),
+											  V.par3 << Exp(V._cpow_r * V.par1 - V._cpow_i * D2R * V.atan2yx),
+											  V.x << V.par3 * Cos(V.par2),
+											  V.y << V.par3 * Sin(V.par2)
+											]
+										)]
+									)]
+								)]
+							)]
+						)]
+					)]
+				)]
+			)]
+		)
+	]
+	),
+
+	Def("calc_0_9", 'calculate 0-9 %n %n %n',['func','X','Y'],
 	[
 		IfElse( EQ( Par.func,0), //
 			[ //here
@@ -775,40 +891,42 @@ Scripts([
 				V._disc2_sinadd << V._disc2_sinadd * V.par2,
 				V._disc2_cosadd << V._disc2_cosadd * V.par2
 			]
-		)
+		),
+		// Supershape
+		V._supershape_rnd << Rnd01,
+		V._supershape_pm_4 << Rnd(1,7) / 4.0,
+		V._supershape_pneg1_n1 << -1.0 / Rnd(0.1,10.0),
+		V._supershape_n2 << Rnd(0.01,20.0),
+		V._supershape_n3 << Rnd(0.01,20.0),
+		V._supershape_holes << Rnd(-1.01,1.01),
+		// Flower
+		V._flower_petals << Rnd(3,8),
+		V._flower_holes << Rnd(-0.5,0.2),
+		// Conic
+		V._conic_eccentricity << Rnd(0.3,1.0),
+		V._conic_holes << Rnd01,
+		// Parabola
+		V._parabola_height << Rnd(0.5,1.5),
+		V._parabola_width << Rnd(0.5,1.5),
+		// Bent2
+		V._bent2_x << Rnd(-1.5,1.5),
+		V._bent2_y << Rnd(-1.5,1.5),
+		// Bipolar
+		V._bipolar_shift << -M_PI_2 * Rnd(-1.5,1.5),
+		// Cell
+		V._cell_size << Rnd(-2.5,2.5),
+		// CPow
+		V._cpow_power << Rnd(1,5),
+		V._cpow_r << Rnd(1.01,3.0) / V._cpow_power,
+		V._cpow_i << Rnd(-0.5,0.5) / V._cpow_power,
+		V._cpow_va << 2.0 * M_PI / V._cpow_power
 	])
-	
+
+
 	
 		 /*
 		  * 
-	
-						["append:toList:", ["\/", ["randomFrom:to:", 0, 1000], 1000], "parameters"],
-						["append:toList:", ["*", ["randomFrom:to:", 1, 6], 0.25], "parameters"],
-						["append:toList:", ["\/", -1, ["\/", ["randomFrom:to:", 1, 10000], 1000]], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 0, 20000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 0, 20000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["randomFrom:to:", 3, 8], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -500, 200], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 300, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 0, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 500, 2000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 500, 2000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1500, 1500], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1500, 1500], 1000], "parameters"],
-						["append:toList:",
-							["*",
-								["*", -1, ["readVariable", "pi2"]],
-								["\/", ["randomFrom:to:", -1500, 1500], 1000]],
-							"parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -2500, 2500], 1000], "parameters"],
-						["append:toList:", ["randomFrom:to:", 1, 5], "parameters"],
-						["append:toList:",
-							["\/", ["\/", ["randomFrom:to:", 1000, 3000], 1000], ["getLine:ofList:", 47, "parameters"]],
-							"parameters"],
-						["append:toList:",
-							["\/", ["\/", ["randomFrom:to:", -500, 500], 1000], ["getLine:ofList:", 47, "parameters"]],
-							"parameters"],
+
 						["append:toList:", ["\/", ["randomFrom:to:", -2500, 2500], 1000], "parameters"],
 						["append:toList:", ["\/", ["randomFrom:to:", -2500, 2500], 1000], "parameters"],
 						["append:toList:", ["\/", ["randomFrom:to:", 800, 9000], 1000], "parameters"],
@@ -886,28 +1004,4 @@ Scripts([
 						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"]]
 		  */
 
-	
-/*	,
-
-	Script([
-		
-		
-		
-		V.blah << V.parameter, 
-		V.blah <<  V.blah,
-		Call("suma", [ V.blah, 33.3, S.zmienna_testowa ]),
-		V.blah << V.zmienna_testowa,
-		
-		IfElse(
-			EQ(3.0,5.0) & LT(V.par1,33.3), 
-			[V.blah << Sin(V.par1*V.par2)],
-			[V.ttt << Cos(V.par1/V.par2),
-				V.par1 << V.par2,
-				V.par2 << V.par1
-			]
-		)
-
-	])
-*/	
-	
 ])
