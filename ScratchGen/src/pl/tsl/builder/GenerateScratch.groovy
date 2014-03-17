@@ -95,11 +95,12 @@ class Command extends Expression {
 // Variable handling
 class Vars {
 	def varSet = [] as Set
+	def varIgnore = [] as Set
 	public Vars leftShift(String n) { varSet << n ; return this }
 	public Vars leftShift(Expression e) { varSet << e.name ; return this }
 	public String toString() {
 		def b = '"variables": [' << "\n"
-		b << varSet.collect {
+		b << (varSet-varIgnore).collect {
 			"\t{\n" +
 			"\t\t" + '"name": "'  + it + '",' + "\n" +
 			"\t\t" + '"value": 1,' + "\n" +
@@ -229,7 +230,7 @@ def Rnd = { from, to -> new Function('randomFrom:to:',[from,to]) }
 def Rnd01 = Rnd(0.001,1.0)
 
 def IfElse = { cond,op1,op2 -> new Command('doIfElse',cond,op1,op2) }
-def If = { cond,op1 -> new Command('doIfElse',cond,op1) }
+def If = { cond,op1 -> new Command('doIf',cond,op1) }
 
 // Math aliases
 def M_E = 		2.7182818284590452354
@@ -258,6 +259,9 @@ def R2D	=		57.295779513082320876798154814105 // rad to deg conversion
 def D2R = 		0.01745329251994329576923690768489 // deg to rad conversion
 
 // Your script generation goes here
+
+// do not display below variables, they are already defined
+VariableG.varSet.varIgnore += ['x','y','r','r2','par1','par2','par3','par4','par5','atan2xy','atan2yx','_a','_b','_c','_d','_e','_f','_weight'] as Set
 
 Scripts([
 	
@@ -549,7 +553,7 @@ Scripts([
 									  V.par2 << V.atan2yx + R2D * V._radialblur_spinvar * V.par1,
 									  V.par3 << V._radialblur_zoomvar * V.par1 - 1.0,
 									  V.x << ( V.r * Cos(V.par2) + V.par3 * Par.X) / V._weight,
-									  V.x << ( V.r * Sin(V.par2) + V.par3 * Par.Y) / V._weight,
+									  V.y << ( V.r * Sin(V.par2) + V.par3 * Par.Y) / V._weight,
 									],
 									[IfElse ( EQ( Par.func, 37), // Pie
 										[ V.par1 << R2D * (V._pie_rotation + 2.0 * M_PI * (Floor(Rnd01 * V._pie_slices + 0.5) + Rnd01 * V._pie_thickness) / V._pie_slices),
@@ -616,21 +620,42 @@ Scripts([
 							[ V.par1 << M_PI * R2D * V._weight * Rnd01,
 							  V.par2 << Tan(V.par1) * V._weight / V.r2,
 							  V.x << V.par2 * Cos(Par.X * R2D),
-							  V.y << V.par2 * Sin(Par.Y * R2D),
+							  V.y << V.par2 * Sin(Par.Y * R2D)
 							],
-							[IfElse ( EQ( Par.func, 45), //
-								[ //here
+							[IfElse ( EQ( Par.func, 45), // Blade
+								[ V.par1 << R2D * Rnd01 * V._weight * V.r,
+								  V.par2 << Sin(V.par1),
+								  V.par3 << Cos(V.par1),
+								  V.x << Par.X * (V.par3 + V.par2),
+								  V.y << Par.X * (V.par3 - V.par2),
 								],
-								[IfElse ( EQ(Par.func, 46), //
-									[ //here
+								[IfElse ( EQ(Par.func, 46), // Secant
+									[ V.par1 << Cos ( R2D * V._weight * V.r),
+									  V.par2 << 1.0 / V.par1,
+								      V.x << Par.X,
+									  IfElse( LT(V.par1, 0),
+										  [ V.y << V.par2 + 1.0],
+										  [ V.y << V.par2 - 1.0]
+									  )
 									],
-									[IfElse ( EQ( Par.func, 47), //
-										[ //here
+									[IfElse ( EQ( Par.func, 47), // Twintrian
+										[ V.par1 << R2D * Rnd01 * V._weight * V.r,
+										  V.par2 << Sin(V.par1),
+										  V.par3 << Log(V.par2 * V.par2) + Cos(V.par1),
+										  If( LT(V.par3,-30), [V.par3 << -30.0] ),
+										  V.x << Par.X * V.par3,
+										  V.y << Par.X * (V.par3 - V.par2 * M_PI) 
 										],
-										[IfElse ( EQ( Par.func, 48), //
-											[ //here
+										[IfElse ( EQ( Par.func, 48), // Cross
+											[ V.par1 << Par.X * Par.X - Par.Y * Par.Y,
+											  V.par2 << Sqrt(1.0 / (V.par1 * V.par1)),
+											  V.x << Par.X * V.par2,
+											  V.y << Par.Y * V.par2
 											],
-											[ // here
+											[ V.par1 << V._disc2_timespi * (Par.X + Par.Y), // Disc2
+											  V.par2 << 1.0 / M_PI * D2R * V.atan2xy,
+											  V.x << (Sin(V.par1) + V._disc2_cosadd) * V.par2,
+											  V.y << (Cos(V.par1) + V._disc2_sinadd) * V.par2 
 											]
 										)]
 									)]
