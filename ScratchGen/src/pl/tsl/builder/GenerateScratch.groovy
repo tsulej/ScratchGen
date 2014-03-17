@@ -185,7 +185,7 @@ def Scripts =  { scripts ->
 	println VariableG.varSet.toString()
 }
 
-// Custom blocks with hack
+// Custom blocks with hack, look here: http://scratch.mit.edu/discuss/topic/1810/
 // Parameter types list: https://docs.google.com/spreadsheet/ccc?key=0Ai13BQTlMxCzdG5lelZDczFnc241S2FmWVNhcEkwMEE#gid=0
 // You should provide block name with as a string with parameter types fe. '"calculate sum %n and %n and store it to %m.var"',["par1","par2","variable"]
 
@@ -226,7 +226,6 @@ def Exp = { par -> new ComputeFunction('e ^',par) }
 def Pow10 = { par -> new ComputeFunction('10 ^',par) }
 def Round = { par -> new Function('rounded', [par]) }
 def Rnd = { from, to -> new Function('randomFrom:to:',[from,to]) }
-def Rnd01 = Rnd(0.0,1000.0) / 1000.0 
 
 def IfElse = { cond,op1,op2 -> new Command('doIfElse',cond,op1,op2) }
 def If = { cond,op1 -> new Command('doIfElse',cond,op1) }
@@ -432,25 +431,48 @@ Scripts([
 
 	Def("calc_20_29", 'calculate 20-29 %n %n %n',['func','X','Y'],
 	[
-		IfElse( EQ( Par.func,20), //
-			[ //here
+		IfElse( EQ( Par.func,20), // Cosine
+			[ V.par1 << Par.X * M_PI * R2D,
+			  Call("cosh",[Par.Y, S.par2]),
+			  Call("sinh",[Par.Y, S.par3]),
+			  V.x << Cos(V.par1) * V.par2,
+			  V.y << -(Sin(V.par1)) * V.par3 
 			],
-			[IfElse ( EQ( Par.func, 21), //
-				[ //here
+			[IfElse ( EQ( Par.func, 21), // Rings
+				[ V.par1 << V._c * V._c,
+				  V.par2 << ( (V.r + V.par1) % (2.0 * V.par1)) - V.par1 + V.r * (1.0 - V.par1),
+				  V.x << V.par2 * Cos(V.atan2xy),
+				  V.y << V.par2 * Sin(V.atan2xy)
 				],
-				[IfElse ( EQ( Par.func, 22), //
-					[ //here
+				[IfElse ( EQ( Par.func, 22), // Fan
+					[ V.par1 << 0.5 * M_PI * R2D * V._c * V._c,
+					  IfElse( GT( (V.atan2xy + R2D * V._f) % (2.0*V.par1), V.par1 ),
+					    [V.par2 << V.atan2xy - V.par1],
+						[V.par2 << V.atan2xy + V.par1]
+					  ),
+				     V.x << V.r * Cos(V.par2),
+					 V.y << V.r * Sin(V.par2)
 					],
-					[IfElse ( EQ( Par.func, 23), //
-						[ //here
+					[IfElse ( EQ( Par.func, 23), // Blob
+						[ V.par1 << V.r * (V._blob_low + V._blob_bdiff * (0.5 + 0.5 * Sin(V._blob_waves * V.atan2xy))),
+						  V.x << Sin(V.atan2xy) * V.par1,
+						  V.y << Cos(V.atan2xy) * V.par1
 						],
-						[IfElse ( EQ( Par.func, 24), //
-							[ //here
+						[IfElse ( EQ( Par.func, 24), // PDJ
+							[ V.x << Sin(V._pdj_a * Par.Y) - Cos(V._pdj_b * Par.X),
+							  V.y << Sin(V._pdj_c * Par.X) - Cos(V._pdj_d * Par.Y),
 							],
-							[IfElse ( EQ( Par.func, 25), //
-								[ //here
+							[IfElse ( EQ( Par.func, 25), // Fan2
+								[ V.par1 << V.atan2xy + V._fan2_y - V._fan2_x * Round( (V.atan2xy + V._fan2_y)/V._fan2_x),
+								  V.par2 << 0.5 * V._fan2_x,
+								  IfElse( GT(V.par1, V.par2),
+									  [V.par3 << V.atan2xy - V.par2],
+									  [V.par3 << V.atan2xy + V.par2]
+								  ),
+								  V.x << V.r * Sin(V.par3),
+								  V.y << V.r * Cos(V.par3)
 								],
-								[IfElse ( EQ(Par.func, 26), //
+								[IfElse ( EQ(Par.func, 26), // Rings2
 									[ //here
 									],
 									[IfElse ( EQ( Par.func, 27), //
@@ -517,7 +539,18 @@ Scripts([
 	),
 
     Script([  // precalculations
-
+		// Blob
+		V._blob_low << Rnd(0.2, 0.7),
+		V._blob_bdiff << Rnd(0.8, 1.2) - V._blob_low,
+		V._blob_waves << Rnd(2,7),
+		// PDJ
+		V._pdj_a << R2D * Rnd(-3.0, 3.0),
+		V._pdj_b << R2D * Rnd(-3.0, 3.0),
+		V._pdj_c << R2D * Rnd(-3.0, 3.0),
+		V._pdj_d << R2D * Rnd(-3.0, 3.0),
+		// Fan2
+		V._fan2_x << R2D * M_PI * Rnd(0.04,0.64),
+		V._fan2_y << R2D * Rnd(2,7)
 	])
 	
 	
