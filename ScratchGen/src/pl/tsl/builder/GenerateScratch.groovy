@@ -100,7 +100,7 @@ class Vars {
 	public Vars leftShift(Expression e) { varSet << e.name ; return this }
 	public String toString() {
 		def b = '"variables": [' << "\n"
-		b << (varSet-varIgnore).collect {
+		b << (varSet-varIgnore).sort().collect {
 			"\t{\n" +
 			"\t\t" + '"name": "'  + it + '",' + "\n" +
 			"\t\t" + '"value": 1,' + "\n" +
@@ -193,7 +193,7 @@ def Scripts =  { scripts ->
 def Def = { alias, name, List pars, List blocks -> procaliases[alias] = name ; 
 	Script( [new Function('procDef', [new Expression(name), 
 		new Expression(pars.collect{ '"' + it + '"'}.toString()).noquotation(),
-		new Expression(pars.collect{ '""' }.toString()).noquotation(),
+		new Expression(pars.collect{ '"1"' }.toString()).noquotation(),
 		new Expression('true')]
 	)] + blocks )
 }
@@ -233,30 +233,30 @@ def IfElse = { cond,op1,op2 -> new Command('doIfElse',cond,op1,op2) }
 def If = { cond,op1 -> new Command('doIf',cond,op1) }
 
 // Math aliases
-def M_E = 		2.7182818284590452354
-def M_LOG2E = 	1.4426950408889634074
-def M_LOG10E = 	0.43429448190325182765
-def M_LN2 =		0.69314718055994530942
-def M_LN10 =	2.30258509299404568402
-def M_PI =		3.14159265358979323846
-def M_PI_2 =	1.57079632679489661923
-def M_PI_4 =	0.78539816339744830962
-def M_1_PI =	0.31830988618379067154
-def M_2_PI =	0.63661977236758134308
-def M_2_SQRTPI =1.12837916709551257390
-def M_SQRT2 =	1.41421356237309504880
-def M_SQRT1_2 =	0.7071067811865475244
-def M_2PI =     6.283185307179586476925286766559
-def M_3PI_4 =   2.3561944901923449288469825374596
-def M_SQRT3 =   1.7320508075688772935274463415059
-def M_SQRT3_2 = 0.86602540378443864676372317075249
-def M_SQRT5 =   2.2360679774997896964091736687313
-def M_PHI =     1.61803398874989484820458683436563 // golden ratio
-def M_1_2PI =   0.1591549430918953357688837633725
-def IM =		2147483647.0
-def AM = 		0.000000000465661287524579692410575
-def R2D	=		57.295779513082320876798154814105 // rad to deg conversion
-def D2R = 		0.01745329251994329576923690768489 // deg to rad conversion
+def M_E = 		Math.E as BigDecimal					//2,7182818284590452354
+def M_LOG2E = 	1.0 / Math.log(2.0) as BigDecimal 	//1.4426950408889634074
+def M_LOG10E = 	Math.log10(Math.E) as BigDecimal		//0.43429448190325182765
+def M_LN2 =		Math.log(2.0) as BigDecimal			//0.69314718055994530942
+def M_LN10 =	Math.log(10.0) as BigDecimal 			//2.30258509299404568402
+def M_PI =		Math.PI as BigDecimal 				//3.14159265358979323846
+def M_PI_2 =	Math.PI / 2.0 as BigDecimal 			//1.57079632679489661923
+def M_PI_4 =	Math.PI / 4.0 as BigDecimal 			//0.78539816339744830962
+def M_1_PI =	1.0 / Math.PI as BigDecimal 			//0.31830988618379067154
+def M_2_PI =	2.0 / Math.PI as BigDecimal 			//0.63661977236758134308
+def M_2_SQRTPI =2.0 / Math.sqrt(Math.PI) as BigDecimal //1.12837916709551257390
+def M_SQRT2 =	Math.sqrt(2.0) as BigDecimal 			//1.41421356237309504880
+def M_SQRT1_2 =	Math.sqrt(2.0) / 2.0 as BigDecimal 	//0.7071067811865475244
+def M_2PI =     2.0 * Math.PI as BigDecimal 			//6.283185307179586476925286766559
+def M_3PI_4 =   3.0 * Math.PI / 4.0 as BigDecimal 	//2.3561944901923449288469825374596
+def M_SQRT3 =   Math.sqrt(3.0) as BigDecimal 			//1.7320508075688772935274463415059
+def M_SQRT3_2 = Math.sqrt(3.0) / 2.0 as BigDecimal 	//0.86602540378443864676372317075249
+def M_SQRT5 =   Math.sqrt(5.0) as BigDecimal			//2.2360679774997896964091736687313
+def M_PHI =     (1.0 + Math.sqrt(5.0)) / 2.0 as BigDecimal 	//1.61803398874989484820458683436563 // golden ratio
+def M_1_2PI =   1.0 / (2.0 * Math.PI) as BigDecimal	//0.1591549430918953357688837633725
+def IM =		2147483647.0 as BigDecimal
+def AM = 		1.0 / IM as BigDecimal 				//0.000000000465661287524579692410575
+def R2D	=		360.0 / (2.0 * Math.PI) as BigDecimal	//57.295779513082320876798154814105 // rad to deg conversion
+def D2R = 		(2.0 * Math.PI) / 360.0 as BigDecimal	//0.01745329251994329576923690768489 // deg to rad conversion
 
 // Your script generation goes here
 
@@ -922,7 +922,7 @@ Scripts([
 	]
 	),
 
-	Def("calc_70_79", 'calculate 0-9 %n %n %n',['func','X','Y'],
+	Def("calc_70_79", 'calculate 70-79 %n %n %n',['func','X','Y'],
 	[
 		IfElse( EQ( Par.func, 70), // Polar2
 			[ V.x << D2R * (1.0/M_PI) * V.atan2xy,
@@ -942,7 +942,7 @@ Scripts([
 							[V.x << Sqrt(Par.X * Par.X + V._separation_x) - Par.X * V._separation_xinside],
 							[V.x << -1.0 * (Sqrt(Par.X * Par.X + V._separation_x) + Par.X * V._separation_xinside)]
 						  ),
-					  	  IfElse ( GT(Par.X,0.0),
+					  	  IfElse ( GT(Par.Y,0.0),
 						    [V.y << Sqrt(Par.Y * Par.Y + V._separation_y) - Par.Y * V._separation_yinside],
 						    [V.y << -1.0 * (Sqrt(Par.Y * Par.Y + V._separation_y) + Par.Y * V._separation_yinside)]
 						  )
@@ -1009,7 +1009,230 @@ Scripts([
 	]
 	),
 
-	Def("calc_0_9", 'calculate 0-9 %n %n %n',['func','X','Y'],
+	Def("calc_80_89", 'calculate 80-89 %n %n %n',['func','X','Y'],
+	[
+		IfElse( EQ( Par.func,80), // Whorl
+			[ IfElse( LT(V.r, V._weight),
+				[ V.par1 << V.atan2yx + R2D * V._whorl_inside/(V._weight - V.r) ],
+				[ V.par1 << V.atan2yx + R2D * V._whorl_outside/(V._weight - V.r)]
+			  ),
+		      V.x << V.r * Cos(V.par1),
+			  V.y << V.r * Sin(V.par1)
+			],
+			[IfElse ( EQ( Par.func, 81), // Waves2
+				[ V.x << Par.X + V._waves2_scalex * Sin(R2D * Par.Y * V._waves2_freqx),
+				  V.y << Par.Y + V._waves2_scaley * Sin(R2D * Par.X * V._waves2_freqy)
+				],
+				[IfElse ( EQ( Par.func, 82), // Exp
+					[ V.par1 << Exp(Par.X),
+					  V.par2 << R2D * Par.Y,
+					  V.x << V.par1 * Cos(V.par2),
+					  V.y << V.par1 * Sin(V.par2)
+					],
+					[IfElse ( EQ( Par.func, 83), // Log
+						[ V.x << 0.5 * Ln(V.r2),
+						  V.y << D2R * V.atan2yx
+						],
+						[IfElse ( EQ( Par.func, 84), // Sin
+							[ V.par1 << R2D * Par.X,
+							  Call("sinh",[Par.Y, S.par2]),
+							  Call("cosh",[Par.Y, S.par3]),
+							  V.x << Sin(V.par1) * V.par3,
+							  V.y << Cos(V.par1) * V.par2
+							],
+							[IfElse ( EQ( Par.func, 85), // Cos
+								[ V.par1 << R2D * Par.X,
+								  Call("sinh",[Par.Y, S.par2]),
+								  Call("cosh",[Par.Y, S.par3]),
+								  V.x << Cos(V.par1) * V.par3,
+								  V.y << -(Sin(V.par1) * V.par2)
+								],
+								[IfElse ( EQ(Par.func, 86), // Tan
+									[ V.par1 << R2D * 2.0 * Par.X,
+									  Call("sinh",[2.0 * Par.Y, S.par2]),
+									  Call("cosh",[2.0 * Par.Y, S.par3]),
+									  V.par4 << 1.0 / ( Cos(V.par1) + V.par3),
+									  V.x << V.par4 * Sin(V.par1),
+									  V.y << V.par4 * V.par2
+									],
+									[IfElse ( EQ( Par.func, 87), // Sec
+										[ V.par1 << R2D * Par.X,
+										  Call("sinh",[Par.Y, S.par2]),
+									      Call("cosh",[Par.Y, S.par3]),
+										  Call("cosh",[2.0 * Par.Y,S.par5]),
+										  V.par4 << 2.0 / (Cos(2.0 *V.par1) + V.par5),
+										  V.x << V.par4 * Cos(V.par1) * V.par3,
+										  V.y << V.par4 * Sin(V.par1) * V.par2
+										],
+										[IfElse ( EQ( Par.func, 88), // Csc
+											[ V.par1 << R2D * Par.X,
+										      Call("sinh",[Par.Y, S.par2]),
+									          Call("cosh",[Par.Y, S.par3]),
+										      Call("cosh",[2.0 * Par.Y,S.par5]),
+										      V.par4 << 2.0 / (V.par5 - Cos(2.0 *V.par1)),
+											  V.x << V.par4 * Sin(V.par1) * V.par3,
+											  V.y << -(V.par4 * Cos(V.par1) * V.par2)
+											],
+											[ V.par1 << R2D * 2.0 * Par.X, // Cot
+											  Call("sinh",[2.0 * Par.Y, S.par2]),
+											  Call("cosh",[2.0 * Par.Y, S.par3]),
+											  V.par4 << 1.0 / ( V.par3 - Cos(V.par1)),
+											  V.x << V.par4 * Sin(V.par1),
+											  V.y << -(V.par4 * V.par2)
+											]
+										)]
+									)]
+								)]
+							)]
+						)]
+					)]
+				)]
+			)]
+		)
+	]
+	),
+
+Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
+	[
+		IfElse( EQ( Par.func,90), // Sinh
+			[ V.par1 << R2D * Par.Y,
+			  Call("sinh",[Par.X, S.par2]),
+			  Call("cosh",[Par.X, S.par3]),
+			  V.x << Cos(V.par1) * V.par2,
+			  V.y << Sin(V.par1) * V.par3
+			],
+			[IfElse ( EQ( Par.func, 91), // Cosh
+				[ V.par1 << R2D * Par.Y,
+				  Call("sinh",[Par.X, S.par2]),
+				  Call("cosh",[Par.X, S.par3]),
+				  V.x << Cos(V.par1) * V.par3,
+				  V.y << Sin(V.par1) * V.par2
+				],
+				[IfElse ( EQ( Par.func, 92), // Tanh
+					[ V.par1 << R2D * 2.0 * Par.Y,
+					  Call("sinh",[2.0 * Par.X, S.par2]),
+					  Call("cosh",[2.0 * Par.X, S.par3]),
+					  V.par4 << 1.0 / ( Cos(V.par1) + V.par3),
+					  V.x << V.par4 * V.par2,
+					  V.y << V.par4 * Sin(V.par1)
+					],
+					[IfElse ( EQ( Par.func, 93), // Sech
+						[ V.par1 << R2D * Par.Y,
+						  Call("sinh",[Par.X, S.par2]),
+						  Call("cosh",[Par.X, S.par3]),
+						  Call("cosh",[2.0 * Par.X,S.par5]),
+						  V.par4 << 2.0 / (Cos(2.0 *V.par1) + V.par5),
+						  V.x << V.par4 * Cos(V.par1) * V.par3,
+						  V.y << -(V.par4 * Sin(V.par1) * V.par2)
+						],
+						[IfElse ( EQ( Par.func, 94), // Csch
+							[ V.par1 << R2D * Par.Y,
+							  Call("sinh",[Par.X, S.par2]),
+							  Call("cosh",[Par.X, S.par3]),
+							  Call("cosh",[2.0 * Par.X, S.par5]),
+							  V.par4 << 2.0 / (V.par5 - Cos(2.0 *V.par1)),
+							  V.x << V.par4 * Cos(V.par1) * V.par2,
+							  V.y << -(V.par4 * Sin(V.par1) * V.par3)
+							],
+							[IfElse ( EQ( Par.func, 95), // Coth
+								[ V.par1 << R2D * 2.0 * Par.Y, 
+								  Call("sinh",[2.0 * Par.X, S.par2]),
+								  Call("cosh",[2.0 * Par.X, S.par3]),
+								  V.par4 << 1.0 / ( V.par3 - Cos(V.par1)),
+								  V.x << V.par4 * V.par2,
+								  V.y << V.par4 * Sin(V.par1) 
+								],
+								[IfElse ( EQ(Par.func, 96), // Auger
+									[ V.par1 << Sin(V._auger_freq * Par.X), //s
+									  V.par2 << Sin(V._auger_freq * Par.Y), //t
+									  V.par3 << V._auger_weight * (V._auger_scale * V.par2 / 2.0 + Abs(Par.X) * V.par2), // dx
+									  V.x << Par.X + V._auger_sym * V.par3,
+									  V.y << Par.Y + V._auger_weight * (V._auger_scale * V.par1 / 2.0 + Abs(Par.Y) * V.par1)
+									],
+									[IfElse ( EQ( Par.func, 97), // Flux
+										[ V.par1 << Par.X + V._weight, // xpw
+										  V.par2 << Par.X - V._weight, // xmw
+										  V.par3 << V._flux_spread * Sqrt (Sqrt (Par.Y * Par.Y + V.par1 * V.par1) / Sqrt(Par.Y * Par.Y + V.par2 * V.par2)),
+										  Call("atan2",[Par.Y, V.par2, S.par4]),
+										  Call("atan2",[Par.Y, V.par1, S.par5]),
+										  V.par1 << 0.5 * (V.par4 - V.par5),
+										  V.x << V.par3 * Cos(V.par1),
+										  V.y << V.par3 * Sin(V.par1)
+										],
+										[IfElse ( EQ( Par.func, 98), // Mobius
+											[ V.par1 << V._mobius_re_a * Par.X - V._mobius_im_a * Par.Y + V._mobius_re_b, // re_u
+											  V.par2 << V._mobius_re_a * Par.Y + V._mobius_im_a * Par.X + V._mobius_im_b, // im_u
+											  V.par3 << V._mobius_re_c * Par.X - V._mobius_im_c * Par.Y + V._mobius_re_d, // re_v
+											  V.par4 << V._mobius_re_c * Par.Y + V._mobius_im_c * Par.X + V._mobius_im_d, // im_v
+											  V.par5 << 1.0 / (V.par3 * V.par3 + V.par4 * V.par4),
+											  V.x << V.par5 * (V.par1 * V.par3 + V.par2 * V.par4),
+											  V.y << V.par5 * (V.par1 * V.par3 - V.par1 * V.par4)
+											],
+											[ // Truchet
+											  V.par1 << Round(4.0 * Par.X),
+											  V.par2 << Round(4.0 * Par.Y),
+											  V.par3 << Par.X - V.par1,
+											  IfElse( LT(V.par3,0), [ V.par1 << 1.0 + V.par3], [ V.par1 << V.par3 ] ),
+											  V.par3 << Par.Y - V.par2,
+											  IfElse( LT(V.par3,0), [ V.par2 << 1.0 + V.par3], [ V.par2 << V.par3 ] ),
+											  // Par3 == Tiletype
+											  IfElse( EQ(V._truchet_seed,0.0), [ V.par3 << 0.0 ],
+												  [ IfElse( EQ(V._truchet_seed,1.0), [V.par3 << 1.0],
+													  [ V.par4 << Round(2.0 * Par.X) * V._truchet_seed2, 
+														V.par5 << Round(2.0 * Par.Y) * V._truchet_seed2,
+														V.par4 << (V.par4 + V.par5 + V.par4 * V.par5 + V._truchet_seed) * V._truchet_seed2 / 2.0,
+														V.par4 << (V.par4 * 32747.0 + 12345.0) % 65535.0, 
+														V.par3 << V.par4 % 2.0
+													  ]
+													)
+												  ]
+											  ),
+											  IfElse ( LT(V.par3,1.0),
+												  [ Call("pow",[Abs(V.par1),V._truchet_exponent, S.par3]),
+													Call("pow",[Abs(V.par2),V._truchet_exponent, S.par4]),
+													Call("pow",[V.par3 + V.par4,V._truchet_onen, S.par5]),
+													V.par5 << Abs(V.par5 - 0.5) / V._truchet_rmax, // r0
+													Call("pow",[Abs(V.par1-1.0),V._truchet_exponent, S.par3]),
+													Call("pow",[Abs(V.par2-1.0),V._truchet_exponent, S.par4]),
+													Call("pow",[V.par3 + V.par4,V._truchet_onen, S.par4]),
+													V.par4 << Abs(V.par4 - 0.5) / V._truchet_rmax // r1
+												  ],
+												  [ Call("pow",[Abs(V.par1-1.0),V._truchet_exponent, S.par3]),
+													Call("pow",[Abs(V.par2),V._truchet_exponent, S.par4]),
+													Call("pow",[V.par3 + V.par4,V._truchet_onen, S.par5]),
+													V.par5 << Abs(V.par5 - 0.5) / V._truchet_rmax, // r0
+													Call("pow",[Abs(V.par1),V._truchet_exponent, S.par3]),
+													Call("pow",[Abs(V.par2-1.0),V._truchet_exponent, S.par4]),
+													Call("pow",[V.par3 + V.par4,V._truchet_onen, S.par4]),
+													V.par4 << Abs(V.par4 - 0.5) / V._truchet_rmax, // r1
+												  ] 
+										      ),
+										      V.x << 0.0,
+											  V.y << 0.0,
+										      If( LT(V.par5, 1.0),
+												  [ V.x << V.par1 + Floor(2.0 * Par.X),
+													V.y << V.par2 + Floor(2.0 * Par.Y)
+												  ]
+											  ),
+										  	  If( LT(V.par4, 1.0),
+													[ V.x << V.x + V.par1 + Floor(2.0 * Par.X),
+													  V.y << V.y + V.par2 + Floor(2.0 * Par.Y)
+													]
+											  )
+											]
+										)]
+									)]
+								)]
+							)]
+						)]
+					)]
+				)]
+			)]
+		)
+	]
+	),
+
+Def("calc_0_9", 'calculate 0-9 %n %n %n',['func','X','Y'],
 	[
 		IfElse( EQ( Par.func,0), //
 			[ //here
@@ -1183,8 +1406,8 @@ Scripts([
 		V._separation_y << V._separation_y * V._separation_y,
 		V._separation_yinside << Rnd(-1.01,1.01),
 		// Split
-		V._split_xsize << Rnd(-1.01,1.01),
-		V._split_ysize << Rnd(-1.01,1.01),
+		V._split_xsize << Rnd(-0.8,0.8),
+		V._split_ysize << Rnd(-0.8,0.8),
 		// Splits
 		V._splits_x << Rnd(-1.01,1.01),
 		V._splits_y << Rnd(-1.01,1.01),
@@ -1216,12 +1439,12 @@ Scripts([
 		V._waves2_freqy << Rnd(0.01,4.01),
 		V._waves2_scaley << Rnd(0.5,1.5),
 		// Auger
-		V._auger_freq << Rnd(3,6),
+		V._auger_freq << R2D * Rnd(3,6),
 		V._auger_scale << Rnd(0.1,0.8),
 		V._auger_sym << Rnd(-1.01,1.01),
 		V._auger_weight << Rnd(-1.01,1.01),
 		// Flux
-		V._flux_spread << Rnd(0.5,1.01),
+		V._flux_spread << 2.0 + Rnd(0.5,1.01),
 		// Mobius
 		V._mobius_re_a << Rnd(-1.01, 1.01),
 		V._mobius_im_a << Rnd(-1.01, 1.01),
@@ -1230,6 +1453,13 @@ Scripts([
 		V._mobius_re_c << Rnd(-1.01, 1.01),
 		V._mobius_im_c << Rnd(-1.01, 1.01),
 		V._mobius_re_d << Rnd(-1.01, 1.01),
-		V._mobius_im_d << Rnd(-1.01, 1.01)
+		V._mobius_im_d << Rnd(-1.01, 1.01),
+		// Truchet
+		V._truchet_seed << Rnd(0,65535),
+		V._truchet_seed2 << Sqrt(V._truchet_seed + V._truchet_seed / 2.0 + 0.000000001) / (V._truchet_seed * 0.5 + 0.000000001) * 0.25,
+		V._truchet_exponent << Rnd(0.5,2.0), // exponent
+		V._truchet_onen << 1.0 / V._truchet_exponent, 
+		Call("pow",[2.0, 1.0/ V._truchet_exponent, S.par1]),
+		V._truchet_rmax << 0.5 * Rnd(0.2,1.0) * (V.par1 - 1.0),
 	])
 ])
