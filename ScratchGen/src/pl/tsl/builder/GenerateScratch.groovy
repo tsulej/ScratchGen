@@ -922,6 +922,93 @@ Scripts([
 	]
 	),
 
+	Def("calc_70_79", 'calculate 0-9 %n %n %n',['func','X','Y'],
+	[
+		IfElse( EQ( Par.func, 70), // Polar2
+			[ V.x << D2R * (1.0/M_PI) * V.atan2xy,
+			  V.y << (1.0/M_PI)/2.0 * Ln(V.r2)
+			],
+			[IfElse ( EQ( Par.func, 71), // Popcorn2
+				[ V.x << Par.X + V._popcorn2_x * Sin(R2D * Tan(Par.Y * V._popcorn2_c)),
+				  V.y << Par.Y + V._popcorn2_y * Sin(R2D * Tan(Par.X * V._popcorn2_c)),
+				],
+				[IfElse ( EQ( Par.func, 72), // Scry
+					[ V.par1 << (1.0 / (V.r * (V.r2 + 1.0/V._weight))) / V._weight,
+					  V.x << Par.X * V.par1,
+					  V.y << Par.Y * V.par1
+					],
+					[IfElse ( EQ( Par.func, 73), // Separation
+						[ IfElse ( GT(Par.X,0.0),
+							[V.x << Sqrt(Par.X * Par.X + V._separation_x) - Par.X * V._separation_xinside],
+							[V.x << -1.0 * (Sqrt(Par.X * Par.X + V._separation_x) + Par.X * V._separation_xinside)]
+						  ),
+					  	  IfElse ( GT(Par.X,0.0),
+						    [V.y << Sqrt(Par.Y * Par.Y + V._separation_y) - Par.Y * V._separation_yinside],
+						    [V.y << -1.0 * (Sqrt(Par.Y * Par.Y + V._separation_y) + Par.Y * V._separation_yinside)]
+						  )
+						],
+						[IfElse ( EQ( Par.func, 74), // Split
+							[ IfElse( GT(Cos(M_PI*R2D*Par.X*V._split_xsize),0.0),
+								[V.y << Par.Y],
+								[V.y << -(Par.Y)]
+							  ),
+						  	  IfElse( GT(Cos(M_PI*R2D*Par.Y*V._split_ysize),0.0),
+							    [V.x << Par.X],
+							    [V.x << -(Par.X)]
+							  )
+							],
+							[IfElse ( EQ( Par.func, 75), // Splits
+								[ IfElse( GT(Par.X ,0.0),
+									[ V.x << Par.X + V._splits_x ],
+									[ V.x << Par.X - V._splits_x ]
+								  ),
+							  	  IfElse( GT(Par.Y ,0.0),
+								    [ V.y << Par.Y + V._splits_y ],
+								    [ V.y << Par.Y - V._splits_y ]
+								  )
+								],
+								[IfElse ( EQ(Par.func, 76), // Stripes
+									[ V.par1 << Floor(Par.X + 0.5), //roundx
+									  V.par2 << Par.X - V.par1, //offsetx
+									  V.x << V.par2 * V._stripes_space + V.par1,
+									  V.y << Par.Y + V.par2 * V.par2 * V._stripes_warp
+									],
+									[IfElse ( EQ( Par.func, 77), // Wedge
+										[ V.par1 << D2R * V.atan2yx + V._wedge_swirl * V.r, // a
+										  V.par2 << Floor(M_1_PI * 0.5 * (V._wedge_count * V.par1 + M_PI)), //c
+										  V.par1 << R2D * (V.par1 * (1.0 - M_1_PI * 0.5 * V._wedge_angle * V._wedge_count) + V.par2 * V._wedge_angle), 
+										  V.par2 << V.r + V._wedge_hole,
+										  V.x << V.par2 * Cos(V.par1),
+										  V.y << V.par2 * Sin(V.par1)
+										],
+										[IfElse ( EQ( Par.func, 78), // WedgeJulia
+											[ Call("pow",[V.r2, V._wedgejulia_cn, S.par1]), // r
+											  V.par2 << (D2R * V.atan2yx + 2.0 * M_PI * Round(V._wedgejulia_power * Rnd01)) / V._wedgejulia_power, //a
+											  V.par3 << Floor( M_1_PI * 0.5 * (V._wedgejulia_count * V.par2 + M_PI)),
+											  V.par2 << R2D * (V.par2 * V._wedgejulia_cf + V.par3 * V._wedgejulia_angle),
+											  V.x << V.par1 * Cos(V.par2),
+											  V.y << V.par1 * Sin(V.par2)
+											],
+											[ V.par1 << 1.0 / V.r, //r
+											  V.par2 << D2R * V.atan2yx + V._wedgesph_swirl * V.par1, //a
+											  V.par3 << Floor( M_1_PI * 0.5 * (V._wedgesph_count * V.par2 + M_PI)),
+											  V.par2 << R2D * (V.par2 * (1.0 - 0.5*M_1_PI*V._wedgesph_angle*V._wedgesph_count) + V.par3 * V._wedgesph_angle),
+											  V.par1 << V.par1 + V._wedgesph_hole,
+											  V.x << V.par1 * Cos(V.par2),
+											  V.y << V.par1 * Sin(V.par2),
+											]
+										)]
+									)]
+								)]
+							)]
+						)]
+					)]
+				)]
+			)]
+		)
+	]
+	),
+
 	Def("calc_0_9", 'calculate 0-9 %n %n %n',['func','X','Y'],
 	[
 		IfElse( EQ( Par.func,0), //
@@ -976,10 +1063,12 @@ Scripts([
 		V._pdj_c << R2D * Rnd(-2.99, 2.99),
 		V._pdj_d << R2D * Rnd(-2.99, 2.99),
 		// Fan2
-		V._fan2_x << R2D * M_PI * Rnd(0.04,0.64),
+		V._fan2_x << Rnd(0.2,0.8),
+		V._fan2_x << R2D * M_PI * V._fan2_x * V._fan2_x,
 		V._fan2_y << R2D * Rnd(2,7),
 		// Rings2
-		V._rings2_val << Rnd(0.01,1.44),
+		V._rings2_val << Rnd(0.1,1.2),
+		V._rings2_val << V._rings2_val * V._rings2_val,
 		// Perspective
 		V._perspective_dist << Rnd(0.99,3.01),
 		V.par1 << R2D * M_PI / 2.0 * Rnd(0.3,1.0),
@@ -1060,8 +1149,10 @@ Scripts([
 		// Curve
 		V._curve_xamp << Rnd(-2.5,2.5),
 		V._curve_yamp << Rnd(-2.5,2.5),
-		V._curve_xlength << Rnd(0.8,7),
-		V._curve_ylength << Rnd(0.8,7),
+		V._curve_xlength << Rnd(0.9,2.7),
+		V._curve_xlength << V._curve_xlength * V._curve_xlength,
+		V._curve_ylength << Rnd(0.9,2.7),
+		V._curve_ylength << V._curve_ylength * V._curve_ylength,
 		// Esher
 		V.par1 << Rnd(-3.01,3.01) * R2D,
 		V._esher_vd << 0.5 * Sin(V.par1),
@@ -1079,66 +1170,66 @@ Scripts([
 		V._oscilloscope_separation << Rnd(0.01, 2.01),
 		V._oscilloscope_frequency << 360.0 * Rnd(-3.01,3.01),
 		V._oscilloscope_amplitude << Rnd(1.01,3.01),
-		V._oscilloscope_damping << Rnd(0,1)
+		V._oscilloscope_damping << Rnd(0,1),
+		// Popcorn2
+		V._popcorn2_x << Rnd(-0.4,0.4),
+		V._popcorn2_y << Rnd(-0.4,0.4),
+		V._popcorn2_c << R2D * Rnd(-5.01,5.01),
+		// Separation
+		V._separation_x << Rnd01,
+		V._separation_x << V._separation_x * V._separation_x, 
+		V._separation_xinside << Rnd(-1.01,1.01),
+		V._separation_y << Rnd01,
+		V._separation_y << V._separation_y * V._separation_y,
+		V._separation_yinside << Rnd(-1.01,1.01),
+		// Split
+		V._split_xsize << Rnd(-1.01,1.01),
+		V._split_ysize << Rnd(-1.01,1.01),
+		// Splits
+		V._splits_x << Rnd(-1.01,1.01),
+		V._splits_y << Rnd(-1.01,1.01),
+		// Stripes
+		V._stripes_space << 1.0 - Rnd(-0.8,0.8),
+		V._stripes_warp << Rnd(-4.01,4.01),
+		// Wedge
+		V._wedge_angle << Rnd(-3.01,3.01),
+		V._wedge_hole << Rnd(-0.5,0.5),
+		V._wedge_count << Rnd(1,6),
+		V._wedge_swirl << Rnd(-1.01,1.01),
+		// WegdeJulia
+		V._wedgejulia_angle << Rnd(-3.01,3.01),
+		V._wedgejulia_count << Rnd(2,7),
+		V._wedgejulia_power << Rnd(2,7),
+		V._wedgejulia_cf << 1.0 - 0.5 * M_1_PI * V._wedgejulia_angle * V._wedgejulia_count,
+		V._wedgejulia_cn << Rnd(1.01,4.01) / V._wedgejulia_power / 2.0,
+		// WedgeSph
+		V._wedgesph_angle << Rnd(-3.01,3.01),
+		V._wedgesph_count << Rnd(1,6),
+		V._wedgesph_hole << Rnd(-0.5,0.5),
+		V._wedgesph_swirl << Rnd(-1.01,1.01),
+		// Whorl
+		V._whorl_inside << Rnd(-1.01,1.01),
+		V._whorl_outside << Rnd(-1.01,1.01),
+		// Waves2
+		V._waves2_freqx << Rnd(0.01,4.01),
+		V._waves2_scalex << Rnd(0.5,1.5),
+		V._waves2_freqy << Rnd(0.01,4.01),
+		V._waves2_scaley << Rnd(0.5,1.5),
+		// Auger
+		V._auger_freq << Rnd(3,6),
+		V._auger_scale << Rnd(0.1,0.8),
+		V._auger_sym << Rnd(-1.01,1.01),
+		V._auger_weight << Rnd(-1.01,1.01),
+		// Flux
+		V._flux_spread << Rnd(0.5,1.01),
+		// Mobius
+		V._mobius_re_a << Rnd(-1.01, 1.01),
+		V._mobius_im_a << Rnd(-1.01, 1.01),
+		V._mobius_re_b << Rnd(-1.01, 1.01),
+		V._mobius_im_b << Rnd(-1.01, 1.01),
+		V._mobius_re_c << Rnd(-1.01, 1.01),
+		V._mobius_im_c << Rnd(-1.01, 1.01),
+		V._mobius_re_d << Rnd(-1.01, 1.01),
+		V._mobius_im_d << Rnd(-1.01, 1.01)
 	])
-
-
-	
-		 /*
-		  * 
-
-						["append:toList:", ["\/", ["randomFrom:to:", -400, 400], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -400, 400], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -5000, 5000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 0, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 0, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -800, 800], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -4000, 4000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -3000, 3000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -500, 500], 1000], "parameters"],
-						["append:toList:", ["randomFrom:to:", 1, 6], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -3000, 3000], 1000], "parameters"],
-						["append:toList:", ["randomFrom:to:", 2, 7], "parameters"],
-						["append:toList:",
-							["*",
-								["randomFrom:to:", 2, 7],
-								["-", ["*", ["randomFrom:to:", 0, 1], 2], 1]],
-							"parameters"],
-						["append:toList:",
-							["\/",
-								["\/", ["\/", ["randomFrom:to:", 1000, 4000], 1000], ["getLine:ofList:", 86, "parameters"]],
-								2],
-							"parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -3000, 3000], 1000], "parameters"],
-						["append:toList:", ["randomFrom:to:", 1, 6], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -500, 500], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 0, 4000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 500, 1500], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 0, 4000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 500, 1500], 1000], "parameters"],
-						["append:toList:", ["randomFrom:to:", 3, 6], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 100, 800], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", 500, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"],
-						["append:toList:", ["\/", ["randomFrom:to:", -1000, 1000], 1000], "parameters"]]
-		  */
-
 ])
