@@ -262,7 +262,7 @@ def D2R = 		(2.0 * Math.PI) / 360.0 as BigDecimal	//0.01745329251994329576923690
 
 // do not display below variables, they are already defined
 VariableG.varSet.varIgnore += ['x','y','r','r2','par1','par2','par3','par4','par5','atan2xy','atan2yx','_a','_b','_c','_d','_e','_f','_weight', 'temp_x','temp_y'] as Set
-def fractal_flame = false // determine which script generate (difference in precalculations, eg. preblur
+def fractal_flame = true // determine which script generate (difference in precalculations, eg. preblur
 
 def precalcFlame = {
 	if(fractal_flame) {
@@ -1178,8 +1178,8 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 											  V.y << V.par5 * (V.par1 * V.par3 - V.par1 * V.par4)
 											],
 											[ // Truchet
-											  V.par1 << V._truchet_scale * Par.X * V._weight,
-											  V.par2 << V._truchet_scale * Par.Y * V._weight,
+											  V.par1 << V._truchet_scale * Par.X / V._weight,
+											  V.par2 << V._truchet_scale * Par.Y / V._weight,
 											  V.par3 << V.par1 - Round(V.par1),
 											  IfElse( LT(V.par3,0), [ V.par1 << 1.0 + V.par3], [ V.par1 << V.par3 ] ),
 											  V.par3 << V.par2 - Round(V.par2),
