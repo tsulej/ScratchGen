@@ -264,7 +264,7 @@ def D2R = 		(2.0 * Math.PI) / 360.0 as BigDecimal	//0.01745329251994329576923690
 VariableG.varSet.varIgnore += ['x','y','r','r2','par1','par2','par3','par4','par5','atan2xy','atan2yx','_a','_b','_c','_d','_e','_f','_weight', 'temp_x','temp_y'] as Set
 def fractal_flame = false // determine which script generate (difference in precalculations, eg. preblur
 
-def forFlame = {
+def precalcFlame = {
 	if(fractal_flame) {
 	  return [
 		  V.temp_x << V._weight * V.x,
@@ -275,6 +275,15 @@ def forFlame = {
 	} else {
 	  return []
 	}
+}
+
+def truchetFlame = {
+	if(fractal_flame) {
+		return [
+		  V.x << V.x / V._weight,
+		  V.y << V.y / V._weight
+		]
+	} else return []
 }
 
 Scripts([
@@ -884,7 +893,7 @@ Scripts([
 										  
 										  V.x << V.par1 * Cos(V.par2),
 										  V.y << V.par1 * Sin(V.par2),
-										] + forFlame(),
+										] + precalcFlame(),
 										[IfElse ( EQ( Par.func, 68), // Modulus
 											[ V.par1 << 2.0 * V._modulus_x,
 											  V.par2 << 2.0 * V._modulus_y,
@@ -1169,25 +1178,18 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 											  V.y << V.par5 * (V.par1 * V.par3 - V.par1 * V.par4)
 											],
 											[ // Truchet
-											  V.par1 << Round(4.0 * Par.X),
-											  V.par2 << Round(4.0 * Par.Y),
-											  V.par3 << Par.X - V.par1,
+											  V.par1 << V._truchet_scale * Par.X * V._weight,
+											  V.par2 << V._truchet_scale * Par.Y * V._weight,
+											  V.par3 << V.par1 - Round(V.par1),
 											  IfElse( LT(V.par3,0), [ V.par1 << 1.0 + V.par3], [ V.par1 << V.par3 ] ),
-											  V.par3 << Par.Y - V.par2,
+											  V.par3 << V.par2 - Round(V.par2),
 											  IfElse( LT(V.par3,0), [ V.par2 << 1.0 + V.par3], [ V.par2 << V.par3 ] ),
 											  // Par3 == Tiletype
-											  IfElse( EQ(V._truchet_seed,0.0), [ V.par3 << 0.0 ],
-												  [ IfElse( EQ(V._truchet_seed,1.0), [V.par3 << 1.0],
-													  [ V.par4 << Round(2.0 * Par.X) * V._truchet_seed2, 
-														V.par5 << Round(2.0 * Par.Y) * V._truchet_seed2,
-														V.par4 << (V.par4 + V.par5 + V.par4 * V.par5 + V._truchet_seed) * V._truchet_seed2 / 2.0,
-														V.par4 << (V.par4 * 32747.0 + 12345.0) % 65535.0, 
-														V.par3 << V.par4 % 2.0
-													  ]
-													)
-												  ]
-											  ),
-											  IfElse ( LT(V.par3,1.0),
+											  V.par4 << Round(Par.X) * V._truchet_seed2, 
+											  V.par5 << Round(Par.Y) * V._truchet_seed2,
+											  V.par4 << (V.par4 + V.par5 + V.par4 * V.par5 + V._truchet_seed) * V._truchet_seed2 / 2.0,
+											  V.par4 << (V.par4 * 32747.0 + 12345.0) % 65535.0, 
+											  IfElse ( LT(V.par4 % 4.0,2.0),
 												  [ Call("pow",[Abs(V.par1),V._truchet_exponent, S.par3]),
 													Call("pow",[Abs(V.par2),V._truchet_exponent, S.par4]),
 													Call("pow",[V.par3 + V.par4,V._truchet_onen, S.par5]),
@@ -1210,16 +1212,16 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 										      V.x << 0.0,
 											  V.y << 0.0,
 										      If( LT(V.par5, 1.0),
-												  [ V.x << V.par1 + Floor(2.0 * Par.X),
-													V.y << V.par2 + Floor(2.0 * Par.Y)
+												  [ V.x << V._truchet_size * (V.par1 + Floor(Par.X)),
+													V.y << V._truchet_size * (V.par2 + Floor(Par.Y))
 												  ]
 											  ),
 										  	  If( LT(V.par4, 1.0),
-													[ V.x << V.x + V.par1 + Floor(2.0 * Par.X),
-													  V.y << V.y + V.par2 + Floor(2.0 * Par.Y)
+													[ V.x << V.x + V._truchet_size * (V.par1 + Floor(Par.X)),
+													  V.y << V.y + V._truchet_size * (V.par2 + Floor(Par.Y))
 													]
 											  )
-											]
+											] + truchetFlame()
 										)]
 									)]
 								)]
@@ -1460,6 +1462,10 @@ Def("calc_0_9", 'calculate 0-9 %n %n %n',['func','X','Y'],
 		V._truchet_exponent << Rnd(0.5,2.0), // exponent
 		V._truchet_onen << 1.0 / V._truchet_exponent, 
 		Call("pow",[2.0, 1.0/ V._truchet_exponent, S.par1]),
-		V._truchet_rmax << 0.5 * Rnd(0.2,1.0) * (V.par1 - 1.0),
+		V._truchet_rmax << 0.5 * Rnd(0.2,0.8) * (V.par1 - 1.0),
+		V._truchet_size << Rnd(0.8,3.0),
+		V.par1 << Rnd(-360,0),
+		V._truchet_scale << Cos(V.par1) - Sin(V.par1)
+		
 	])
 ])
