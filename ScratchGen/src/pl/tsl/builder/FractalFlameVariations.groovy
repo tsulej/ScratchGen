@@ -31,7 +31,7 @@ class FFVars extends GenerateScratch {
 		} else return []
 	}
 
-def flFunctions =  { [
+	def flFunctions =  { [
 	
 		Def("pow", 'power %n ^ %n into %m.var',['X','A','VAR'],
 			[ V.set( Par.VAR, Exp( Par.A * Ln( Par.X))) ]
@@ -71,7 +71,7 @@ def flFunctions =  { [
 ] }
 
 
-def flCalc0_49 =  {  [
+	def flCalc0_49 =  {  [
 	
 	Def("calc_0_9", 'calculate 0-9 %n %n %n',['func','X','Y'],
 	[
@@ -439,7 +439,7 @@ Def("calc_40_49", 'calculate 40-49 %n %n %n',['func','X','Y'],
 	)]
 	}
 
-  def flCalc50_99 = {  [Def("calc_50_59", 'calculate 50-59 %n %n %n',['func','X','Y'],
+	def flCalc50_99 = {  [Def("calc_50_59", 'calculate 50-59 %n %n %n',['func','X','Y'],
 	[
 		IfElse( EQ( Par.func,50), // Supershape
 			[ V.par1 << M_PI_4 * R2D + V._supershape_pm_4 * V.atan2yx,
@@ -983,7 +983,7 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 ] }
 
 
-def flCalc100_199 = { [
+	def flCalc100_199 = { [
 	
 	Def("calc_100_109", 'calculate 100-109 %n %n %n',['func','X','Y'],
 		[
@@ -999,21 +999,61 @@ def flCalc100_199 = { [
 					  [ V.par4 << V.par5 * V._bcollide_pi_bcn + ( (V.par4 + V._bcollide_bca_bcn) % V._bcollide_pi_bcn )],
 					  [ V.par4 << V.par5 * V._bcollide_pi_bcn + ( (V.par4 - V._bcollide_bca_bcn) % V._bcollide_pi_bcn )]
 				  ),
-					V.par4 << R2D * V.par4,
+				  V.par4 << R2D * V.par4,
 				  Call("sinh",[V.par3, S.par1]),
 				  Call("cosh",[V.par3, S.par2]),
 				  V.par5 << V.par2 - Cos(V.par4),
 				  V.x << V.par1 / V.par5,
 				  V.y << Sin(V.par4) / V.par5
 				],
-				[IfElse ( EQ( Par.func, 101), //
-					[ //here
+				[IfElse ( EQ( Par.func, 101), // BMod
+					[ V.par1 << Par.X + 1.0,
+					  V.par2 << Par.X - 1.0,
+					  V.par3 << 0.5 * (Ln(V.par1 * V.par1 + Par.Y * Par.Y) - Ln(V.par2 * V.par2 + Par.Y * Par.Y)), // tau
+					  Call("atan2",[Par.Y, V.par1, S.par1]),
+					  Call("atan2",[Par.Y, -(V.par2), S.par2]),
+					  V.par4 << M_PI - D2R * V.par1 - D2R * V.par2, // sigma
+					  If( LT( V.par3, V._bmod_radius) & LT(-(V.par3),V._bmod_radius),
+						  [ V.par3 << (V.par3 + V._bmod_radius + V._bmod_distance * V._bmod_radius) % (2.0 * V._bmod_radius) - V._bmod_radius]
+					  ),
+				  	  V.par4 << R2D * V.par4,
+					  Call("sinh",[V.par3, S.par1]),
+					  Call("cosh",[V.par3, S.par2]),
+					  V.par5 << V.par2 - Cos(V.par4),
+					  V.x << V.par1 / V.par5,
+					  V.y << Sin(V.par4) / V.par5
 					],
-					[IfElse ( EQ( Par.func, 102), //
-						[ //here
+					[IfElse ( EQ( Par.func, 102), // BSwirl
+						[ V.par1 << Par.X + 1.0,
+						  V.par2 << Par.X - 1.0,
+						  V.par3 << 0.5 * (Ln(V.par1 * V.par1 + Par.Y * Par.Y) - Ln(V.par2 * V.par2 + Par.Y * Par.Y)), // tau
+						  Call("atan2",[Par.Y, V.par1, S.par1]),
+						  Call("atan2",[Par.Y, -(V.par2), S.par2]),
+						  V.par4 << M_PI - D2R * V.par1 - D2R * V.par2, // sigma
+						  V.par4 << R2D * (V.par4 + V.par3 * V._bswirl_out + V._bswirl_in / V.par3),
+						  Call("sinh",[V.par3, S.par1]),
+						  Call("cosh",[V.par3, S.par2]),
+						  V.par5 << V.par2 - Cos(V.par4),
+						  V.x << V.par1 / V.par5,
+						  V.y << Sin(V.par4) / V.par5
 						],
-						[IfElse ( EQ( Par.func, 103), //
-							[ //here
+						[IfElse ( EQ( Par.func, 103), // BTransform
+							[ V.par1 << Par.X + 1.0,
+							  V.par2 << Par.X - 1.0,
+							  V.par3 << 0.5 * (Ln(V.par1 * V.par1 + Par.Y * Par.Y) - Ln(V.par2 * V.par2 + Par.Y * Par.Y)) / V._btransform_power + V._btransform_move, // tau
+							  Call("atan2",[Par.Y, V.par1, S.par1]),
+							  Call("atan2",[Par.Y, -(V.par2), S.par2]),
+							  V.par4 << M_PI - D2R * V.par1 - D2R * V.par2 + V._btransform_rotate, // sigma
+							  V.par4 << R2D * (V.par4 / V._btransform_power + M_2PI / V._btransform_power * Floor(Rnd01 * V._btransform_power) ),
+							  IfElse( GT(Par.X, 0),
+								  [V.par3 << V.par3 + V._btransform_split],
+								  [V.par3 << V.par3 - V._btransform_split]
+							  ),
+						  	  Call("sinh",[V.par3, S.par1]),
+							  Call("cosh",[V.par3, S.par2]),
+							  V.par5 << V.par2 - Cos(V.par4),
+							  V.x << V.par1 / V.par5,
+							  V.y << Sin(V.par4) / V.par5
 							],
 							[IfElse ( EQ( Par.func, 104), //
 								[ //here
@@ -1092,7 +1132,7 @@ def flCalc100_199 = { [
 	*/
  }
 
-def flPrecalc0_99 = { [
+	def flPrecalc0_99 = { [
 	
 	Script([  // precalculations
 		// Blob
@@ -1290,10 +1330,21 @@ def flPrecalc0_99 = { [
 		[
 			Script([ 
 				// BCollide
-				V.par1 << Rnd(1,10),
+				V.par1 << Rnd(1.1,8.1),
 				V._bcollide_bcn_pi << M_1_PI * V.par1,
 				V._bcollide_pi_bcn << M_PI / V.par1,
-				V._bcollide_bca_bcn << (M_PI * Rnd(0.1,1)) / V.par1
+				V._bcollide_bca_bcn << (M_PI * Rnd(-0.5,1)) / V.par1,
+				// BMod
+				V._bmod_radius << Rnd(0.01,M_2PI),
+				V._bmod_distance << Rnd(0.01,2.0),
+				// BSwirl
+				V._bswirl_in << Rnd(-2.01,2.01),
+				V._bswirl_out << Rnd(-2.01,2.01),
+				// BTransform
+				V._btransform_rotate << Rnd(-M_2PI,M_2PI),
+				V._btransform_power << Rnd(1.01,6.0),
+				V._btransform_move << Rnd(-0.5,0.5),
+				V._btransform_split << Rnd(-1.01,1.01) 
 			])
 	    ]
 	}
