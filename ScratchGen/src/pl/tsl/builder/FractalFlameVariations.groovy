@@ -1055,8 +1055,29 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 							  V.x << V.par1 / V.par5,
 							  V.y << Sin(V.par4) / V.par5
 							],
-							[IfElse ( EQ( Par.func, 104), //
-								[ //here
+							[IfElse ( EQ( Par.func, 104), // BWraps7
+								[ V.par1 << (Floor(Par.X / V._bwraps7_cellsize) + 0.5) * V._bwraps7_cellsize, // Cx
+								  V.par2 << (Floor(Par.Y / V._bwraps7_cellsize) + 0.5) * V._bwraps7_cellsize, // Cy
+								  V.par3 << Par.X - V.par1, // Lx
+								  V.par4 << Par.Y - V.par2, // Ly
+								  IfElse( GT(V.par3 * V.par3 + V.par4 * V.par4, V._bwraps7_r2),
+									  [ V.x << Par.X,
+										V.y << Par.Y
+									  ],
+								      [ V.par3 << V.par3 * V._bwraps7_g2,
+										V.par4 << V.par4 * V._bwraps7_g2,
+										V.par5 << V._bwraps7_rfactor / ((V.par3 * V.par3 + V.par4 * V.par4) / 4.0 + 1.0),
+										V.par3 << V.par3 * V.par5,
+										V.par4 << V.par4 * V.par5,
+										V.par5 << (V.par3 * V.par3 + V.par4 * V.par4) / V._bwraps7_r2, // r
+										V.par6 << R2D * (V._bwraps7_inner_twist * (1.0 - V.par5) + V._bwraps7_outer_twist * V.par5),
+										V.par7 << Sin(V.par6), // s
+										V.par6 << Cos(V.par6), // c
+										V.x << V.par1 + V.par6 * V.par3 + V.par7 * V.par4,
+										V.y << V.par2 - V.par7 * V.par3 + V.par6 * V.par4,
+										
+									  ]
+								  )
 								],
 								[IfElse ( EQ( Par.func, 105), //
 									[ //here
@@ -1344,7 +1365,22 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 				V._btransform_rotate << Rnd(-M_2PI,M_2PI),
 				V._btransform_power << Rnd(1.01,6.0),
 				V._btransform_move << Rnd(-0.5,0.5),
-				V._btransform_split << Rnd(-1.01,1.01) 
+				V._btransform_split << Rnd(-1.01,1.01),
+				// BWraps7
+				V._bwraps7_cellsize << Rnd(0.4,1.5),
+				V.par1 << Rnd(0.5,2.5), // gain
+				V._bwraps7_g2 << V.par1 * V.par1 + 1.0e-6,
+				V._bwraps7_inner_twist << Rnd(-M_PI,M_PI),
+				V._bwraps7_outer_twist << Rnd(-M_PI,M_PI),
+				V.par1 << Rnd(0,0.7), // space
+				V.par1 << 0.5 * (V._bwraps7_cellsize / (1.0 + V.par1 * V.par1)), // radius
+				V.par2 << V._bwraps7_g2 * V.par1,
+				IfElse( GT(V.par2,2.0),
+					[V.par2 << 1.0],
+					[V.par2 << V.par2 * (1.0 / ( (V.par2 * V.par2) / 4.0 + 1.0 ))]
+				),
+				V._bwraps7_r2 << V.par1 * V.par1,
+				V._bwraps7_rfactor << V.par1 / V.par2
 			])
 	    ]
 	}
