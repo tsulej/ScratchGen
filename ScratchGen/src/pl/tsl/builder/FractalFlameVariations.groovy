@@ -12,8 +12,8 @@ class FFVars extends GenerateScratch {
 	def precalcFlame = {
 		if(fractal_flame) {
 			return [
-				V.temp_x << V._weight * V.x,
-				V.temp_y << V._weight * V.y,
+				V.temp_x << V.temp_x + V._weight * V.x,
+				V.temp_y << V.temp_y + V._weight * V.y,
 				V.x << 0.0,
 				V.y << 0.0
 			]
@@ -637,7 +637,6 @@ Def("calc_40_49", 'calculate 40-49 %n %n %n',['func','X','Y'],
 									[IfElse ( EQ( Par.func, 67), // Preblur
 										[ V.par1 << Rnd01 + Rnd01 + Rnd01 + Rnd01 - 2.0,
 										  V.par2 << 2.0 * M_PI * R2D * Rnd01,
-										  
 										  V.x << V.par1 * Cos(V.par2),
 										  V.y << V.par1 * Sin(V.par2),
 										] + precalcFlame(),
@@ -1079,11 +1078,19 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 									  ]
 								  )
 								],
-								[IfElse ( EQ( Par.func, 105), //
-									[ //here
+								[IfElse ( EQ( Par.func, 105), // Barycentroid
+									[ V.par1 << V._barycentroid_a * Par.X + V._barycentroid_b * Par.Y, // dot02
+									  V.par2 << V._barycentroid_c * Par.X + V._barycentroid_d * Par.Y, // dot12
+									  V.par3 << (V._barycentroid_dot11 * V.par1 - V._barycentroid_dot01 * V.par2) * V._barycentroid_invdenom,
+									  V.par4 << (V._barycentroid_dot00 * V.par2 - V._barycentroid_dot01 * V.par1) * V._barycentroid_invdenom,
+									  IfElse( LT(V.par3,0), [V.par1 << -1.0], [ IfElse( GT(V.par3,0), [V.par1 << 1.0], [V.par1 << 0.0]) ]), // Sign
+									  IfElse( LT(V.par4,0), [V.par2 << -1.0], [ IfElse( GT(V.par4,0), [V.par2 << 1.0], [V.par2 << 0.0]) ]), // Sign
+									  V.x << Sqrt(V.par3 * V.par3 + Par.X * Par.X) * V.par1,
+									  V.y << Sqrt(V.par4 * V.par4 + Par.Y * Par.Y) * V.par2
 									],
-									[IfElse ( EQ(Par.func, 106), //
-										[ //here
+									[IfElse ( EQ(Par.func, 106), // Bilinear
+										[ V.x << Par.Y,
+										  V.y << Par.X,
 										],
 										[IfElse ( EQ( Par.func, 107), //
 											[ //here
@@ -1380,7 +1387,16 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 					[V.par2 << V.par2 * (1.0 / ( (V.par2 * V.par2) / 4.0 + 1.0 ))]
 				),
 				V._bwraps7_r2 << V.par1 * V.par1,
-				V._bwraps7_rfactor << V.par1 / V.par2
+				V._bwraps7_rfactor << V.par1 / V.par2,
+				// Barycentroid
+				V._barycentroid_a << Rnd(-1.01,1.01),
+				V._barycentroid_b << Rnd(-1.01,1.01),
+				V._barycentroid_c << Rnd(-1.01,1.01),
+				V._barycentroid_d << Rnd(-1.01,1.01),
+				V._barycentroid_dot00 << V._barycentroid_a * V._barycentroid_a + V._barycentroid_b + V._barycentroid_b,
+				V._barycentroid_dot01 << V._barycentroid_a * V._barycentroid_c + V._barycentroid_b * V._barycentroid_d,
+				V._barycentroid_dot11 << V._barycentroid_c * V._barycentroid_c + V._barycentroid_d * V._barycentroid_d,
+				V._barycentroid_invdenom << 1.0 / (V._barycentroid_dot00 * V._barycentroid_dot11 - V._barycentroid_dot01 * V._barycentroid_dot01)
 			])
 	    ]
 	}
