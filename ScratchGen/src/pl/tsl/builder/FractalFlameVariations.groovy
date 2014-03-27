@@ -4,7 +4,7 @@ class FFVars extends GenerateScratch {
 
 // do not display below variables, they are already defined
 	void init() {
-		VariableG.varSet.varIgnore += ['x','y','r','r2','par1','par2','par3','par4','par5','atan2xy','atan2yx','_a','_b','_c','_d','_e','_f','_weight', 'temp_x','temp_y'] as Set
+		VariableG.varSet.varIgnore += ['x','y','r','r2','par1','par2','par3','par4','par5','par6','par7','atan2xy','atan2yx','_a','_b','_c','_d','_e','_f','_weight', 'temp_x','temp_y'] as Set
 	}
 		
 	def fractal_flame = true // determine which script generate (difference in precalculations, eg. preblur
@@ -1092,13 +1092,57 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 										[ V.x << Par.Y,
 										  V.y << Par.X,
 										],
-										[IfElse ( EQ( Par.func, 107), //
-											[ //here
+										[IfElse ( EQ( Par.func, 107), // BlockY
+											[ V.par1 << V._weight / ((Cos(Par.X * R2D) + Cos(Par.Y * R2D)) / V._blocky_mp + 1.0), // r
+											  V.par2 << V.r2 + 1.0, // tmp
+											  V.par3 << 2.0 * Par.X,
+											  V.par4 << 2.0 * Par.Y,
+											  V.par3 << Par.X / (0.5 * ( Sqrt(V.par2  + V.par3) + Sqrt(V.par2 - V.par3) )), 
+											  V.par4 << Par.Y / (0.5 * ( Sqrt(V.par2  + V.par4) + Sqrt(V.par2 - V.par4) )),
+											  V.par5 << 1.0 - V.par3 * V.par3,
+											  IfElse( LT(V.par5,0.0), [ V.par5 << 0.0], [V.par5 << Sqrt(V.par5)]), 
+											  Call("atan2", [V.par3, V.par5, S.par3]),
+											  V.x << (D2R / M_PI_2) * V.par3 * V.par1 * V._blocky_x,
+											  V.par5 << 1.0 - V.par4 * V.par4,
+											  IfElse( LT(V.par5,0.0), [ V.par5 << 0.0], [V.par5 << Sqrt(V.par5)]),
+											  Call("atan2", [V.par4, V.par5, S.par4]),
+											  V.y << (D2R / M_PI_2) * V.par4 * V.par1 * V._blocky_y
 											],
-											[IfElse ( EQ( Par.func, 108), //
-												[ //here
+											[IfElse ( EQ( Par.func, 108), // BlurZoom
+												[ V.par1 << 1.0 + V._blurzoom_length * Rnd01,
+												  V.x << (Par.X - V._blurzoom_x) * V.par1 + V._blurzoom_x,
+												  V.y << (Par.Y - V._blurzoom_y) * V.par1 + V._blurzoom_y,
 												],
-												[ // here
+												[ V.par1 << Round(Par.X), // roundX // Boarders2
+												  V.par2 << Round(Par.Y), // roundY
+												  V.par3 << Par.X - V.par1, // offsetX
+												  V.par4 << Par.Y - V.par2, // offsetY 
+												  IfElse( GT(Rnd01,V._boarders2_cr),
+													  [ V.x << V.par3 * V._boarders2_c + V.par1,
+														V.y << V.par4 * V._boarders2_c + V.par2,
+													  ],
+												   	  [ IfElse( GT(Abs(V.par3),Abs(V.par4)),
+															 [ IfElse( GT(V.par3,0.0),
+																 [ V.x << V.par3 * V._boarders2_c + V.par1 + V._boarders2_cl,
+																   V.y << V.par4 * V._boarders2_c + V.par2 + V._boarders2_cl * V.par4/V.par3 
+															     ],
+															     [ V.x << V.par3 * V._boarders2_c + V.par1 - V._boarders2_cl,
+																   V.y << V.par4 * V._boarders2_c + V.par2 - V._boarders2_cl * V.par4/V.par3
+															     ]
+															   )
+														     ],
+														     [ IfElse( GT(V.par4,0.0),
+																 [ V.y << V.par4 * V._boarders2_c + V.par2 + V._boarders2_cl,
+																   V.x << V.par3 * V._boarders2_c + V.par1 + V._boarders2_cl * V.par3/V.par4 
+															     ],
+															     [ V.y << V.par4 * V._boarders2_c + V.par2 - V._boarders2_cl,
+																   V.x << V.par3 * V._boarders2_c + V.par1 - V._boarders2_cl * V.par3/V.par4
+															     ]
+															   )
+														     ]
+														)
+													  ]
+												  )
 												]
 											)]
 										)]
@@ -1396,7 +1440,19 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 				V._barycentroid_dot00 << V._barycentroid_a * V._barycentroid_a + V._barycentroid_b + V._barycentroid_b,
 				V._barycentroid_dot01 << V._barycentroid_a * V._barycentroid_c + V._barycentroid_b * V._barycentroid_d,
 				V._barycentroid_dot11 << V._barycentroid_c * V._barycentroid_c + V._barycentroid_d * V._barycentroid_d,
-				V._barycentroid_invdenom << 1.0 / (V._barycentroid_dot00 * V._barycentroid_dot11 - V._barycentroid_dot01 * V._barycentroid_dot01)
+				V._barycentroid_invdenom << 1.0 / (V._barycentroid_dot00 * V._barycentroid_dot11 - V._barycentroid_dot01 * V._barycentroid_dot01),
+				// BlockY
+				V._blocky_x << (1.0 - 2.0 * Rnd(0,1)) * Rnd(0.9,1.01),
+				V._blocky_y << (1.0 - 2.0 * Rnd(0,1)) * Rnd(0.9,1.01),
+				V._blocky_mp << (1.0 - 2.0 * Rnd(0,1)) * Rnd(1.5,6.01),
+				// BlurZoom
+				V._blurzoom_length << Rnd(-1.01,1.5),
+				V._blurzoom_x << Rnd(-1.01,1.01),
+				V._blurzoom_y << Rnd(-1.01,1.01),
+				// Boarders2
+				V._boarders2_c << Rnd01 + 0.1,
+				V._boarders2_cl << V._boarders2_c * (Rnd01 + 0.1),
+				V._boarders2_cr << V._boarders2_c + V._boarders2_c * (Rnd01 + 0.1)
 			])
 	    ]
 	}
