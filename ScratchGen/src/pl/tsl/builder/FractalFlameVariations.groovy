@@ -7,7 +7,7 @@ class FFVars extends GenerateScratch {
 		VariableG.varSet.varIgnore += ['x','y','r','r2','par1','par2','par3','par4','par5','par6','par7','atan2xy','atan2yx','_a','_b','_c','_d','_e','_f','_weight', 'temp_x','temp_y'] as Set
 	}
 		
-	def fractal_flame = true // determine which script generate (difference in precalculations, eg. preblur
+	def fractal_flame = false // determine which script generate (difference in precalculations, eg. preblur
 
 	def precalcFlame = {
 		if(fractal_flame) {
@@ -31,6 +31,13 @@ class FFVars extends GenerateScratch {
 		} else return []
 	}
 
+	def circlecropFlame = {
+		if(fractal_flame) { [
+			V.temp_x << 0,
+			V.temp_y << 0,  ]
+		} else return []
+	}
+	
 	def flFunctions =  { [
 	
 		Def("pow", 'power %n ^ %n into %m.var',['X','A','VAR'],
@@ -982,7 +989,7 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 ] }
 
 
-	def flCalc100_199 = { [
+	def flCalc100_109 = { [
 	
 	Def("calc_100_109", 'calculate 100-109 %n %n %n',['func','X','Y'],
 		[
@@ -1156,6 +1163,10 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 		]
 		)
 ]	
+	
+
+
+
 	/* template
 	
 	Def("calc_0_9", 'calculate 0-9 %n %n %n',['func','X','Y'],
@@ -1203,6 +1214,224 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 	
 	*/
  }
+
+def flPrecalc110_119 = {
+		[
+			Script([
+				// CannabisCurve
+				V._cannabiscurve_filled << Rnd(0,1),
+				// Checks
+				V._checks_x << Rnd(0.2,1.0),
+				V._checks_y << Rnd(0.2,1.0),
+				V._checks_size << Rnd(0.4,1.4),
+				V._checks_rnd << Rnd(0,1),
+				// CircleCrop
+				V._circlecrop_x << Rnd(-0.5,0.5),
+				V._circlecrop_y << Rnd(-0.5,0.5),
+				V._circlecrop_scatter_area << Rnd(-0.99,0.99),
+				V._circlecrop_zero << Rnd(0,1),
+				V._circlecrop_radius << Rnd(0.3,1.0),
+				// Circlize
+				V._circlize_hole << Rnd(-0.5,0.5),
+				// Circus
+				V._circus_size << Rnd(0.2,1.2),
+				// Cloverleaf
+				V._cloverleaf_filled << Rnd(0,1),
+				// Collideoscope
+				V.par1 << Rnd(1,10),
+				V._collideoscope_kn_pi << V.par1 * M_1_PI,
+				V._collideoscope_pi_kn << M_PI / V.par1,
+				V.par2 << M_PI * Rnd01,
+				V._collideoscope_ka_kn << V.par2 / V.par1,
+				// Crop
+				V._crop_xmin << Rnd(-0.8,0.0),
+				V._crop_ymin << Rnd(-0.8,0.0),
+				V._crop_xmax << V._crop_xmin + 0.9,
+				V._crop_ymax << V._crop_ymin + 0.9,
+				V.par1 << Rnd(-0.8,0.8),
+				V._crop_w << (V._crop_xmax - V._crop_xmin) * 0.5 * V.par1,
+				V._crop_h << (V._crop_ymax - V._crop_ymin) * 0.5 * V.par1,
+				V._crop_zero << Rnd(0,1),
+				// ECollide
+				V.par1 << Rnd(1,10),
+				V._ecollide_ecn_pi << V.par1 * M_1_PI,
+				V._ecollide_pi_ecn << M_PI / V.par1,
+				V.par2 << M_PI * Rnd(-1.01,0.99),
+				V._ecollide_eca_ecn << V.par2 / V.par1,
+			])
+		]
+}
+
+def flCalc110_119 = { [
+		
+		Def("calc_110_119", 'calculate 110-119 %n %n %n',['func','X','Y'],
+			[
+				IfElse( EQ( Par.func, 110), // CannabisCurve
+					[ V.par1 << (1.0 + 9.0 / 10.0 * Cos(8.0 * V.atan2xy)) * (1.0 + 1.0 / 10.0 * Cos(24.0 * V.atan2xy)) * (9.0 / 10.0 + 1.0 / 10.0 * Cos(200.0 * V.atan2xy)) * (1.0 + Sin(V.atan2xy)),
+					  V.par2 << R2D*M_PI/2.0 + V.atan2xy,
+					  If( EQ(V._cannabiscurve_filled,1.0), [V.par1 << V.par1 * Rnd01] ),
+					  V.x << Sin(V.par2) * V.par1,
+					  V.y << Cos(V.par2) * V.par1 + 1.0
+					],
+					[IfElse ( EQ( Par.func, 111), // Checks
+						[ V.par1 << (Round(Par.X / V._checks_size) + Round(Par.Y / V._checks_size)) % 2, //isXY
+						  V.par2 << V._checks_rnd * Rnd01,
+						  V.par3 << V._checks_rnd * Rnd01,
+						  IfElse( EQ(V.par1, 0.0),
+							  [ V.par4 << -(V._checks_x) + V.par2,
+								V.par5 << -(V._checks_y) 
+							  ],
+							  [ V.par4 << V._checks_x,
+								V.par5 << V._checks_y + V.par3
+							  ]
+						  ),
+						  V.x << Par.X + V.par4,
+						  V.y << Par.Y + V.par5
+						],
+						[IfElse ( EQ( Par.func, 112), // CircleBlur
+							[ V.par1 << Sqrt(Rnd01),
+							  V.par2 << R2D * M_2PI * Rnd01,
+							  V.x << Cos(V.par2) * V.par1,
+							  V.y << Sin(V.par2) * V.par1
+							],
+							[IfElse ( EQ( Par.func, 113), // CircleCrop
+								[ V.par1 << Par.X - V._circlecrop_x,
+								  V.par2 << Par.Y - V._circlecrop_y,
+								  V.par3 << Sqrt(V.par1 * V.par1 + V.par2 * V.par2), // rad
+								  Call("atan2",[V.par2,V.par1,S.par4]), // ang
+								  V.par5 << V._circlecrop_radius + Rnd01 * 0.5 * V._circlecrop_scatter_area, // rdc
+								  IfElse( EQ(V._circlecrop_zero,1.0) & GT(V.par3,V._circlecrop_radius),
+									  circlecropFlame() +
+									  [ V.x << 0.0,
+										V.y << 0.0
+									  ],
+								  	  [ IfElse( EQ(V._circlecrop_zero,1.0) & ~(GT(V.par3,V._circlecrop_radius)),
+											[ V.x << Par.X,
+											  V.y << Par.Y
+											],
+											[ IfElse( EQ(V._circlecrop_zero,0.0) & GT(V.par3,V._circlecrop_radius),
+												[ V.x << V.par5 * Cos(V.par4) + V._circlecrop_x,
+												  V.y << V.par5 * Sin(V.par4) + V._circlecrop_y
+												],
+												[ If( EQ(V._circlecrop_zero,0.0) & ~(GT(V.par3,V._circlecrop_radius)),
+													[ V.x << Par.X,
+													  V.y << Par.Y
+													]
+												  )
+												]
+											  )
+											]
+										)
+									  ]
+								  )
+								],
+								[IfElse ( EQ( Par.func, 114), // Circlize
+									[ V.par1 << Abs(Par.X),
+									  V.par2 << Abs(Par.Y),
+									  IfElse( ~(LT( V.par1, V.par2)),
+										  [ V.par3 << V.par1,
+											IfElse( ~(LT(Par.X, V.par2)),
+												[ V.par4 << V.par1 + Par.Y],
+												[ V.par4 << 5.0 * V.par1 - Par.Y]
+											)
+										  ],
+										  [ V.par3 << V.par2,
+											IfElse( ~(LT(Par.Y, V.par1)),
+												[ V.par4 << 3.0 * V.par2 - Par.X],
+												[ V.par4 << 7.0 * V.par2 + Par.X]
+											)
+										  ]
+									  ),
+									  V.par1 << V.par3 / M_PI_4 + V._circlize_hole,
+									  V.par2 << R2D * M_PI_4 * V.par4 / V.par3 - R2D * M_PI_4,
+									  V.x << Cos(V.par2) * V.par1,
+									  V.y << Sin(V.par2) * V.par1 
+									],
+									[IfElse ( EQ( Par.func, 115), // Circus
+										[ IfElse( LT( V.r, 1.0),
+											[ V.par1 << V.r * V._circus_size ],
+											[ V.par1 << V.r / V._circus_size ]
+										  ),
+										  V.x << V.par1 * Cos(V.atan2yx),
+										  V.y << V.par1 * Sin(V.atan2yx),
+										],
+										[IfElse ( EQ(Par.func, 116), // CloverLeaf
+											[ V.par1 << (Sin(2.0 * V.atan2xy) + 0.25 * Sin(6.0 * V.atan2xy)),
+											  If( EQ(V._cloverleaf_filled,1.0), [V.par1 << V.par1 * Rnd01] ),
+											  V.x << Sin(V.atan2xy) * V.par1,
+											  V.y << Cos(V.atan2xy) * V.par1
+											],
+											[IfElse ( EQ( Par.func, 117), // Collideoscope
+												[ V.par1 << D2R * V.atan2yx,
+												  IfElse( GT(V.par1, 0.0),
+													  [ V.par2 << Floor(V.par1 * V._collideoscope_kn_pi),
+														IfElse( EQ(V.par2 % 2.0, 0.0),
+															[V.par1 << R2D * (V.par2 * V._collideoscope_pi_kn + (V._collideoscope_ka_kn + V.par1) % V._collideoscope_pi_kn)],
+															[V.par1 << R2D * (V.par2 * V._collideoscope_pi_kn + (-(V._collideoscope_ka_kn) + V.par1) % V._collideoscope_pi_kn)]
+														)
+													  ],
+													  [ V.par2 << Floor(-(V.par1) * V._collideoscope_kn_pi),
+														IfElse( EQ(V.par2 % 2.0, 1.0),
+															[V.par1 << -R2D * (V.par2 * V._collideoscope_pi_kn + (-(V._collideoscope_ka_kn) - V.par1) % V._collideoscope_pi_kn)],
+															[V.par1 << -R2D * (V.par2 * V._collideoscope_pi_kn + (V._collideoscope_ka_kn - V.par1) % V._collideoscope_pi_kn)]
+														)
+													  ]
+												  ),
+												  V.x << V.r * Cos(V.par1),
+												  V.y << V.r * Sin(V.par1)
+												],
+												[IfElse ( EQ( Par.func, 118), // Crop
+													[ V.x << Par.X,
+													  V.y << Par.Y,
+													  IfElse( (LT(Par.X,V._crop_xmin) | GT(Par.X,V._crop_xmax) | LT(Par.Y,V._crop_ymin) | GT(Par.Y,V._crop_ymax)) & EQ(V._crop_zero,1.0),
+														  [ V.x << 0.0,
+															V.y << 0.0,
+														  ],
+														  [ IfElse( LT(Par.X, V._crop_xmin),
+															  [ V.x << V._crop_xmin + Rnd01 * V._crop_w ],
+															  [ If( GT(Par.X, V._crop_xmax), [ V.x << V._crop_xmax - Rnd01 * V._crop_w ]) ]
+															),
+															IfElse( LT(Par.Y, V._crop_ymin),
+															  [ V.y << V._crop_ymin + Rnd01 * V._crop_h ],
+															  [ If( GT(Par.Y, V._crop_ymax), [ V.y << V._crop_ymax - Rnd01 * V._crop_h ]) ]
+														  )
+														  ]
+													  )
+													],
+													[ V.par1 << V.r2 + 1.0, // tmp  // ECollide
+													  V.par2 << 2.0 * Par.X, // tmp2
+													  V.par3 << V.par1 + V.par2,
+													  IfElse( LT(V.par3,0),[V.par3 << 0.0],[V.par3 << Sqrt(V.par3)]),
+													  V.par4 << V.par1 - V.par2,
+													  IfElse( LT(V.par4,0),[V.par4 << 0.0],[V.par4 << Sqrt(V.par4)]),
+													  V.par1 << (V.par3 + V.par4) * 0.5, // xmax
+													  If( LT(V.par1,1.0), [V.par1 << 1.0]),
+													  V.par2 << Par.x / V.par1,
+													  IfElse( GT(V.par2,1.0), [V.par2 << 1.0], [If( LT(V.par2,-1.0),[V.par2<<-1.0])]),
+													  V.par2 << D2R * ACos(V.par2), // nu
+													  V.par3 << Round(V.par2 * V._ecollide_ecn_pi), // alt
+													  IfElse( EQ(V.par3 % 2.0,0.0),
+														  [V.par2 << V.par3 * V._ecollide_pi_ecn + (V.par2 + V._ecollide_eca_ecn) % V._ecollide_pi_ecn],
+														  [V.par2 << V.par3 * V._ecollide_pi_ecn + (V.par2 - V._ecollide_eca_ecn) % V._ecollide_pi_ecn]
+													  ),
+													  If( LT(Par.Y,0.0),[ V.par2 << -(V.par2)]),
+													  V.par2 << R2D * V.par2,
+													  V.x << V.par1 * Cos(V.par2),
+													  V.y << Sqrt(V.par1 - 1.0) * Sqrt(V.par1 + 1.0) * Sin(V.par2)
+													]
+												)]
+											)]
+										)]
+									)]
+								)]
+							)]
+						)]
+					)]
+				)
+			]
+			)
+		
+]}
 
 	def flPrecalc0_99 = { [
 	
@@ -1398,7 +1627,7 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 	])
 ] }
 
-	def flPrecalc100_199 = {
+	def flPrecalc100_109 = {
 		[
 			Script([ 
 				// BCollide
@@ -1459,13 +1688,12 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 
 }
 
-
 def gen = new FFVars();
 
 gen.printScripts (
 	gen.flFunctions() + 
-	gen.flCalc100_199() +
-	gen.flPrecalc100_199()
+	gen.flCalc110_119() +
+	gen.flPrecalc110_119()
 )
 
 gen.printVariables()
