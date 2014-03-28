@@ -1406,7 +1406,7 @@ def flCalc110_119 = { [
 													  IfElse( LT(V.par4,0),[V.par4 << 0.0],[V.par4 << Sqrt(V.par4)]),
 													  V.par1 << (V.par3 + V.par4) * 0.5, // xmax
 													  If( LT(V.par1,1.0), [V.par1 << 1.0]),
-													  V.par2 << Par.x / V.par1,
+													  V.par2 << Par.X / V.par1,
 													  IfElse( GT(V.par2,1.0), [V.par2 << 1.0], [If( LT(V.par2,-1.0),[V.par2<<-1.0])]),
 													  V.par2 << D2R * ACos(V.par2), // nu
 													  V.par3 << Round(V.par2 * V._ecollide_ecn_pi), // alt
