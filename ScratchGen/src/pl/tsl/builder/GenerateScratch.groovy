@@ -24,12 +24,14 @@ class Expression {
 	Expression or(BigDecimal op) { this | new Number(op) }
 	Expression and(BigDecimal op) { this & new Number(op) }
 	
-	Expression negative() { new Number(-1) * this }
+	Expression negative() { new Number(-1.0) * this }
 	Expression bitwiseNegate() { new Function('not',[this]) }
 	
 	public Expression(String n) { name = '"' + n + '"'; nameclean = n }
 	public String toString() { return name } 
 	public Expression noquotation() { name = nameclean; return this }
+	
+	public def eval = { null }
 }
 
 class Number extends Expression {
@@ -43,6 +45,7 @@ class Number extends Expression {
 	Number div(Number op) { new Number( this.val / op.val) }
 	Number mod(Number op) {	new Number( this.val % op.val) }
 	
+	public def eval = { return val }
 }
 
 class Function extends Expression {
@@ -52,6 +55,24 @@ class Function extends Expression {
 		list = l
 	}
 	public String toString() { return "[" + name + ", " + list.collect{ it.toString() }.join(', ') + "]" }
+	
+	public def eval = {
+		switch(nameclean) {
+			case '+': return list[0].eval() + list[1].eval()
+			case '*': return list[0].eval() * list[1].eval()
+			case '-': return list[0].eval() - list[1].eval()
+			case '\\/': return list[0].eval() / list[1].eval()
+			case '%': return list[0].eval() % list[1].eval()
+			case '|': return list[0].eval() || list[1].eval()
+			case '&': return list[0].eval() && list[1].eval()
+			case 'not': return !list[0].eval()
+			case '<': return list[0].eval() < list[1].eval()
+			case '>': return list[0].eval() > list[1].eval()
+			case '=': return list[0].eval() == list[1].eval()
+			case 'randomFrom:to:': return list[0].eval() == list[1].eval()
+			case 'rounded': return list[0].eval().setScale(0,BigDecimal.ROUND_HALF_UP)
+		}
+	}
 }
 
 class ComputeFunction extends Expression {
@@ -63,6 +84,28 @@ class ComputeFunction extends Expression {
 	public ComputeFunction(String n,BigDecimal o) { this(n, new Number(o)) }
 	
 	public String toString() { return "[" + '"computeFunction:of:", ' + name + ", "  + op.toString() + "]"  }
+	
+	def R2D	=		360.0 / (2.0 * Math.PI) as BigDecimal	//57.295779513082320876798154814105 // rad to deg conversion
+	def D2R = 		(2.0 * Math.PI) / 360.0 as BigDecimal	//0.01745329251994329576923690768489 // deg to rad conversion
+	
+	public def eval = {
+		switch(nameclean) {
+			case 'abs': return op.eval().abs()
+			case 'floor': return op.eval().setScale(0,BigDecimal.ROUND_FLOOR)
+			case 'ceiling': return op.eval().setScale(0,BigDecimal.ROUND_CEILING)
+			case 'sqrt': return Math.sqrt(op.eval())
+			case 'sin': return Math.sin(D2R * op.eval())
+			case 'cos': return Math.cos(D2R * op.eval())
+			case 'tan': return Math.tan(D2R * op.eval())
+			case 'asin': return R2D * Math.asin(op.eval())
+			case 'acos': return R2D * Math.acos(op.eval())
+			case 'atan': return R2D * Math.atan(op.eval())
+			case 'ln': return Math.log(op.eval())
+			case 'log10': return Math.log10(op.eval())
+			case 'e ^': return Math.exp(op.eval())
+			case '10 ^': return 10.0 ** op.eval() 
+		}
+	}
 }
 
 class Command extends Expression {
@@ -180,6 +223,7 @@ public abstract class GenerateScratch {
 	}
 	
 	def procaliases = [:]
+	def procbodies = [:]
 
 	// Script handling
 	def position = 0
@@ -198,7 +242,10 @@ public abstract class GenerateScratch {
 // Parameter types list: https://docs.google.com/spreadsheet/ccc?key=0Ai13BQTlMxCzdG5lelZDczFnc241S2FmWVNhcEkwMEE#gid=0
 // You should provide block name with as a string with parameter types fe. '"calculate sum %n and %n and store it to %m.var"',["par1","par2","variable"]
 
-	public def Def = { alias, name, List pars, List blocks -> procaliases[alias] = name ; 
+	public def Def = { alias, name, List pars, List blocks -> 
+		procaliases[alias] = name
+		procbodies[name] = [pars,blocks]
+		  
 		Script( [new Function('procDef', [new Expression(name), 
 			new Expression(pars.collect{ '"' + it + '"'}.toString()).noquotation(),
 			new Expression(pars.collect{ '"1"' }.toString()).noquotation(),
