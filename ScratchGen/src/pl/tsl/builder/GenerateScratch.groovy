@@ -31,7 +31,7 @@ class Expression {
 	public String toString() { return name } 
 	public Expression noquotation() { name = nameclean; return this }
 	
-	public def eval = { null }
+	public def eval = { return nameclean }
 }
 
 class Number extends Expression {
@@ -50,9 +50,12 @@ class Number extends Expression {
 
 class Function extends Expression {
 	def list
+	static final Random rnd = new Random()
+	public static defbodies =[:]
+	
 	public Function(String n, List l) {
 		super(n)
-		list = l
+		list = l.collect { if(it.getClass() != Expression) new Number(it) else it }
 	}
 	public String toString() { return "[" + name + ", " + list.collect{ it.toString() }.join(', ') + "]" }
 	
@@ -69,7 +72,13 @@ class Function extends Expression {
 			case '<': return list[0].eval() < list[1].eval()
 			case '>': return list[0].eval() > list[1].eval()
 			case '=': return list[0].eval() == list[1].eval()
-			case 'randomFrom:to:': return list[0].eval() == list[1].eval()
+			case 'randomFrom:to:':
+				double l = list[0].eval().toDouble()
+				double r = list[1].eval().toDouble()
+				if( (Math.round(l) == l) && (Math.round(r) == r) )
+				  return l + rnd.nextInt( Math.round(r-l+1).toInteger())
+				else
+				  return l + (r-l) * rnd.nextDouble()  
 			case 'rounded': return list[0].eval().setScale(0,BigDecimal.ROUND_HALF_UP)
 		}
 	}
@@ -159,6 +168,10 @@ class VariableS extends ComputeFunction {
 		else
 			return '["setVar:to:", ' + nameclean + ', ' + op.toString() + ']'
 	}
+	
+	def eval = {
+		Var.varvals[nameclean] = op.eval()
+	}
 }
 
 class VariableG extends Expression {
@@ -182,6 +195,10 @@ class VariableG extends Expression {
 		else
 			return '["readVariable", ' + name + ']'
 	}
+	
+	def eval = {
+		return Var.varvals[nameclean]
+	}
 }
 
 class StringVar {
@@ -191,6 +208,7 @@ class StringVar {
 }
 
 class Var {
+	public static varvals = [:]
 	Object getProperty(String property){
 		return new VariableG(property)
 	}
@@ -202,6 +220,7 @@ class Var {
 }
 
 class BlockParameter {
+	public static parvals = [:]
 	Object getProperty(String property){
 		return new Function('getParam',[new Expression(property),new Expression("r")])
 	}
@@ -223,7 +242,6 @@ public abstract class GenerateScratch {
 	}
 	
 	def procaliases = [:]
-	def procbodies = [:]
 
 	// Script handling
 	def position = 0
@@ -244,8 +262,9 @@ public abstract class GenerateScratch {
 
 	public def Def = { alias, name, List pars, List blocks -> 
 		procaliases[alias] = name
-		procbodies[name] = [pars,blocks]
 		  
+		Function.defbodies[name] = [pars,blocks]
+		
 		Script( [new Function('procDef', [new Expression(name), 
 			new Expression(pars.collect{ '"' + it + '"'}.toString()).noquotation(),
 			new Expression(pars.collect{ '"1"' }.toString()).noquotation(),
