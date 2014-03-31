@@ -55,7 +55,7 @@ class Function extends Expression {
 	
 	public Function(String n, List l) {
 		super(n)
-		list = l.collect { if(it.getClass() != Expression) new Number(it) else it }
+		list = l.collect { if(it instanceof Expression) it else new Number(it) }
 	}
 	public String toString() { return "[" + name + ", " + list.collect{ it.toString() }.join(', ') + "]" }
 	

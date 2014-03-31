@@ -52,6 +52,10 @@ class FFVars extends GenerateScratch {
 			[ V.set( Par.VAR, 0.5 * ( Exp(Par.X) + Exp( 0.0 - Par.X)))]
 		),
 
+		Def("acosh", 'acosh %n into %m.var',['X','VAR'], // Result in Radians
+			[ V.set( Par.VAR, Log(Par.X + Sqrt(Par.X - 1.0)*Sqrt(Par.X + 1.0)))]
+		),
+	
 		Def("atan2", 'atan2 %n %n into %m.var',['Y','X','VAR'], // Result in Degrees
 			[ IfElse( GT( Par.X, 0.0),	
 				[ V.set( Par.VAR, ATan(Par.Y / Par.X))],
@@ -1433,6 +1437,140 @@ def flCalc110_119 = { [
 		
 ]}
 
+
+def flPrecalc120_129 = {
+	[
+		Script([
+			// EJulia
+			V._ejulia_power << Rnd(-5.5,5.5),
+			IfElse( LT(V._ejulia_power,0.0),[V._ejulia_sign << -1.0],[V._ejulia_sign << 1.0] ),
+			// EMod
+			V._emod_radius << Rnd(0.1,2.0),
+			V._emod_distance << Rnd(-1.5,1.5),
+			// EMotion
+			V._emotion_move << Rnd(-1.01,1.01),
+			V._emotion_rotate << Rnd(-M_PI,M_PI)
+		])
+	]
+}
+
+def flCalc120_129 = { [
+	Def("calc_120_129", 'calculate 120-129 %n %n %n',['func','X','Y'],
+	[
+		IfElse( EQ( Par.func, 120), // EJulia
+			[ IfElse( EQ(V._ejulia_sign,1.0),
+				[ V.par1 << Par.X,
+				  V.par2 << V.r2
+				],
+				[ V.par2 << 1.0 / V.r2,
+				  V.par1 << Par.X * V.par2
+				]
+			  ),
+			  V.par2 << V.par2 + 1.0, //tmp
+			  V.par3 << 2.0 * V.par1, //tmp2
+			  V.par4 << V.par2 + V.par3,
+			  IfElse(LT(V.par4,0.0),[V.par4 << 0.0],[V.par4 << Sqrt(V.par4)]),
+			  V.par5 << V.par2 - V.par3,
+			  IfElse(LT(V.par5,0.0),[V.par5 << 0.0],[V.par5 << Sqrt(V.par5)]),
+			  V.par2 << 0.5 * (V.par4 + V.par5),
+			  If(LT(V.par2,1.0),[V.par2 << 1.0]), // xmax
+			  V.par1 << V.par1 / V.par2,
+			  IfElse(GT(V.par1,1.0),[V.par1 << 1.0],[If(LT(V.par1,-1.0),[V.par1 << -1.0])]),
+			  V.par1 << D2R * ACos(V.par1),
+			  If(LT(Par.Y,0.0),[V.par1 << -(V.par1)]),
+			  V.par1 << R2D * (V.par1 / V._ejulia_power + M_2_PI / V._ejulia_power * Floor(Rnd01 * V._ejulia_power)),
+			  Call("acosh",[V.par2, S.par2]),
+			  V.par2 << V.par2 / V._ejulia_power,
+			  Call("sinh",[V.par2,S.par3]),
+			  Call("cosh",[V.par2,S.par4]),
+			  V.x << V.par4 * Cos(V.par1),
+			  V.y << V.par3 * Sin(V.par1)
+			],
+			[IfElse ( EQ( Par.func,121), // EMod
+				[ V.par1 << V.r2 + 1.0, //tmp
+				  V.par2 << 2.0 * Par.X, //tmp2
+				  V.par3 << V.par1 + V.par2,
+				  IfElse(LT(V.par3,0.0),[V.par3 << 0.0],[V.par3 << Sqrt(V.par3)]),
+				  V.par4 << V.par1 - V.par2,
+				  IfElse(LT(V.par4,0.0),[V.par4 << 0.0],[V.par4 << Sqrt(V.par4)]),
+				  V.par1 << 0.5 * (V.par3 + V.par4),
+				  If(LT(V.par1,1.0),[V.par1 << 1.0]), // xmax
+				  V.par2 << Par.X / V.par1,
+				  IfElse(GT(V.par2,1.0),[V.par2 << 1.0],[If(LT(V.par2,-1.0),[V.par2 << -1.0])]),
+				  V.par2 << D2R * ACos(V.par2),
+				  If(LT(Par.Y,0.0),[V.par2 << -(V.par2)]), // nu
+				  Call("acosh",[V.par1, S.par1]), // mu
+				  // miesko start
+				  If( LT(V.par1,V._emod_radius) & LT(-(V.par1),V._emod_radius),
+					  [  IfElse(GT(V.par2,0.0),
+						  	[ V.par1 << (V.par1 + V._emod_radius + V._emod_distance * V._emod_radius) % (2.0 * V._emod_radius) - V._emod_radius ],
+							[ V.par1 << (V.par1 - V._emod_radius - V._emod_distance * V._emod_radius) % (2.0 * V._emod_radius) + V._emod_radius ]  
+						 )
+					  ] 
+				  ),
+				  // miesko stop
+				  V.par2 << R2D * V.par2,
+				  Call("sinh",[V.par1,S.par3]),
+				  Call("cosh",[V.par1,S.par4]),
+				  V.x << V.par4 * Cos(V.par2),
+				  V.y << V.par3 * Sin(V.par2)
+				],
+				[IfElse ( EQ( Par.func, 122), // EMotion
+					[ V.par1 << V.r2 + 1.0, //tmp
+					  V.par2 << 2.0 * Par.X, //tmp2
+					  V.par3 << V.par1 + V.par2,
+					  IfElse(LT(V.par3,0.0),[V.par3 << 0.0],[V.par3 << Sqrt(V.par3)]),
+					  V.par4 << V.par1 - V.par2,
+					  IfElse(LT(V.par4,0.0),[V.par4 << 0.0],[V.par4 << Sqrt(V.par4)]),
+					  V.par1 << 0.5 * (V.par3 + V.par4),
+					  If(LT(V.par1,1.0),[V.par1 << 1.0]), // xmax
+					  V.par2 << Par.X / V.par1,
+					  IfElse(GT(V.par2,1.0),[V.par2 << 1.0],[If(LT(V.par2,-1.0),[V.par2 << -1.0])]),
+					  V.par2 << D2R * ACos(V.par2),
+					  If(LT(Par.Y,0.0),[V.par2 << -(V.par2)]), // nu
+					  Call("acosh",[V.par1, S.par1]), // mu
+					  // 	miesko start
+				  
+					  // miesko stop
+					  V.par2 << R2D * V.par2,
+					  Call("sinh",[V.par1,S.par3]),
+					  Call("cosh",[V.par1,S.par4]),
+					  V.x << V.par4 * Cos(V.par2),
+					  V.y << V.par3 * Sin(V.par2)
+					],
+					[IfElse ( EQ( Par.func, 123), //
+						[ //here
+						],
+						[IfElse ( EQ( Par.func, 124), //
+							[ //here
+							],
+							[IfElse ( EQ( Par.func, 125), //
+								[ //here
+								],
+								[IfElse ( EQ(Par.func, 126), //
+									[ //here
+									],
+									[IfElse ( EQ( Par.func, 127), //
+										[ //here
+										],
+										[IfElse ( EQ( Par.func, 128), //
+											[ //here
+											],
+											[ // here
+											]
+										)]
+									)]
+								)]
+							)]
+						)]
+					)]
+				)]
+			)]
+		)
+	]
+	)
+]}
+
 	def flPrecalc0_99 = { [
 	
 	Script([  // precalculations
@@ -1693,8 +1831,8 @@ def gen = new FFVars();
 
 gen.printScripts (
 	gen.flFunctions() + 
-	gen.flCalc110_119() +
-	gen.flPrecalc110_119()
+	gen.flCalc120_129() +
+	gen.flPrecalc120_129()
 )
 
 gen.printVariables()
