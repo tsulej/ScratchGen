@@ -1442,14 +1442,34 @@ def flPrecalc120_129 = {
 	[
 		Script([
 			// EJulia
-			V._ejulia_power << Rnd(-5.5,5.5),
+			V._ejulia_power << Rnd(-6.01,6.01),
 			IfElse( LT(V._ejulia_power,0.0),[V._ejulia_sign << -1.0],[V._ejulia_sign << 1.0] ),
 			// EMod
-			V._emod_radius << Rnd(0.1,2.0),
-			V._emod_distance << Rnd(-1.5,1.5),
+			V._emod_radius << Rnd(0.1,0.8),
+			V._emod_distance << Rnd(-0.99,0.99),
 			// EMotion
 			V._emotion_move << Rnd(-1.01,1.01),
-			V._emotion_rotate << Rnd(-M_PI,M_PI)
+			V._emotion_rotate << Rnd(-M_PI,M_PI),
+			// EPush
+			V._epush_dist << Rnd(0.5,1.21) * (Rnd(0,1)*2.0-1.0),
+			V._epush_push << Rnd(-1.01,1.01),
+			V._epush_rotate << Rnd(-M_PI,M_PI),
+			// ERotate
+			V._erotate_rotate << Rnd(0,M_2PI),
+			// EScale
+			V._escale_scale << Rnd(0.6,1.5),
+			V._escale_angle << Rnd(-M_PI,M_PI),
+			// ESwirl
+			V._eswirl_in << Rnd(-0.5,0.5),
+			V._eswirl_out << Rnd(-1.01,1.01),
+			// Eclipse
+			V._eclipse_shift << Rnd(-1.99,1.99),
+			// Epispiral
+			V._epispiral_n << Rnd(2,9),
+			V._epispiral_thickness << Rnd(-0.5,0.5),
+			V._epispiral_holes << -(Rnd01),
+			// EpispiralWF
+			V._epispiralwf_waves << Rnd(2,9)
 		])
 	]
 }
@@ -1478,9 +1498,8 @@ def flCalc120_129 = { [
 			  IfElse(GT(V.par1,1.0),[V.par1 << 1.0],[If(LT(V.par1,-1.0),[V.par1 << -1.0])]),
 			  V.par1 << D2R * ACos(V.par1),
 			  If(LT(Par.Y,0.0),[V.par1 << -(V.par1)]),
-			  V.par1 << R2D * (V.par1 / V._ejulia_power + M_2_PI / V._ejulia_power * Floor(Rnd01 * V._ejulia_power)),
+			  V.par1 << R2D * (V.par1  + M_2PI / V._ejulia_power * Floor(Rnd01 * V._ejulia_power)),
 			  Call("acosh",[V.par2, S.par2]),
-			  V.par2 << V.par2 / V._ejulia_power,
 			  Call("sinh",[V.par2,S.par3]),
 			  Call("cosh",[V.par2,S.par4]),
 			  V.x << V.par4 * Cos(V.par1),
@@ -1530,7 +1549,9 @@ def flCalc120_129 = { [
 					  If(LT(Par.Y,0.0),[V.par2 << -(V.par2)]), // nu
 					  Call("acosh",[V.par1, S.par1]), // mu
 					  // 	miesko start
-				  
+					  IfElse(LT(V.par2,0.0), [V.par1 << V.par1 + V._emotion_move],[V.par1 << V.par1 - V._emotion_move]),
+					  If(~(GT(V.par1,0.0)),[V.par1 << -(V.par1),V.par2 << -(V.par2)]),
+					  V.par2 << V.par2 + V._emotion_rotate,
 					  // miesko stop
 					  V.par2 << R2D * V.par2,
 					  Call("sinh",[V.par1,S.par3]),
@@ -1538,25 +1559,122 @@ def flCalc120_129 = { [
 					  V.x << V.par4 * Cos(V.par2),
 					  V.y << V.par3 * Sin(V.par2)
 					],
-					[IfElse ( EQ( Par.func, 123), //
-						[ //here
+					[IfElse ( EQ( Par.func, 123), // EPush
+						[ V.par1 << V.r2 + 1.0, //tmp
+						  V.par2 << 2.0 * Par.X, //tmp2
+						  V.par3 << V.par1 + V.par2,
+						  IfElse(LT(V.par3,0.0),[V.par3 << 0.0],[V.par3 << Sqrt(V.par3)]),
+						  V.par4 << V.par1 - V.par2,
+						  IfElse(LT(V.par4,0.0),[V.par4 << 0.0],[V.par4 << Sqrt(V.par4)]),
+						  V.par1 << 0.5 * (V.par3 + V.par4),
+						  If(LT(V.par1,1.0),[V.par1 << 1.0]), // xmax
+						  V.par2 << Par.X / V.par1,
+						  IfElse(GT(V.par2,1.0),[V.par2 << 1.0],[If(LT(V.par2,-1.0),[V.par2 << -1.0])]),
+						  V.par2 << D2R * ACos(V.par2),
+						  If(LT(Par.Y,0.0),[V.par2 << -(V.par2)]), // nu
+						  Call("acosh",[V.par1, S.par1]), // mu
+						  // 	miesko start
+						  V.par2 << V.par2 + V._epush_rotate,
+						  V.par1 << V.par1 * V._epush_dist + V._epush_push,
+						  // miesko stop
+						  V.par2 << R2D * V.par2,
+						  Call("sinh",[V.par1,S.par3]),
+						  Call("cosh",[V.par1,S.par4]),
+						  V.x << V.par4 * Cos(V.par2),
+						  V.y << V.par3 * Sin(V.par2)
 						],
-						[IfElse ( EQ( Par.func, 124), //
-							[ //here
+						[IfElse ( EQ( Par.func, 124), // ERotate
+							[ V.par1 << V.r2 + 1.0, //tmp
+							  V.par2 << 2.0 * Par.X, //tmp2
+							  V.par3 << V.par1 + V.par2,
+							  IfElse(LT(V.par3,0.0),[V.par3 << 0.0],[V.par3 << Sqrt(V.par3)]),
+							  V.par4 << V.par1 - V.par2,
+							  IfElse(LT(V.par4,0.0),[V.par4 << 0.0],[V.par4 << Sqrt(V.par4)]),
+							  V.par1 << 0.5 * (V.par3 + V.par4),
+							  If(LT(V.par1,1.0),[V.par1 << 1.0]), // xmax
+							  V.par2 << Par.X / V.par1,
+							  IfElse(GT(V.par2,1.0),[V.par2 << 1.0],[If(LT(V.par2,-1.0),[V.par2 << -1.0])]),
+							  V.par2 << D2R * ACos(V.par2),
+							  If(LT(Par.Y,0.0),[V.par2 << -(V.par2)]), // nu
+							  // 	miesko start
+							  V.par2 << (V.par2 + V._erotate_rotate) % M_2PI - M_PI,
+							  // 	miesko stop
+							  V.par2 << R2D * V.par2,
+							  V.x << V.par1 * Cos(V.par2),
+							  V.y << Sqrt(V.par1 - 1.0) * Sqrt(V.par1 + 1.0) * Sin(V.par2)
 							],
-							[IfElse ( EQ( Par.func, 125), //
-								[ //here
+							[IfElse ( EQ( Par.func, 125), // EScale
+								[ V.par1 << V.r2 + 1.0, //tmp
+								  V.par2 << 2.0 * Par.X, //tmp2
+								  V.par3 << V.par1 + V.par2,
+								  IfElse(LT(V.par3,0.0),[V.par3 << 0.0],[V.par3 << Sqrt(V.par3)]),
+								  V.par4 << V.par1 - V.par2,
+								  IfElse(LT(V.par4,0.0),[V.par4 << 0.0],[V.par4 << Sqrt(V.par4)]),
+								  V.par1 << 0.5 * (V.par3 + V.par4),
+								  If(LT(V.par1,1.0),[V.par1 << 1.0]), // xmax
+								  V.par2 << Par.X / V.par1,
+								  IfElse(GT(V.par2,1.0),[V.par2 << 1.0],[If(LT(V.par2,-1.0),[V.par2 << -1.0])]),
+								  V.par2 << D2R * ACos(V.par2),
+								  If(LT(Par.Y,0.0),[V.par2 << -(V.par2)]), // nu
+								  Call("acosh",[V.par1, S.par1]), // mu
+								  // 	miesko start
+								  V.par1 << V.par1 * V._escale_scale,
+								  V.par2 << ((V._escale_scale * (V.par2 + M_PI + V._escale_angle)) % (M_2PI * V._escale_scale) - V._escale_angle - V._escale_scale * M_PI) % M_2PI,
+								  If(GT(V.par2,M_PI),[V.par2 << V.par2 - M_2PI]),
+								  If(LT(V.par2,-M_PI),[V.par2 << V.par2 + M_2PI]),
+								  // 	miesko stop
+								  V.par2 << R2D * V.par2,
+								  Call("sinh",[V.par1,S.par3]),
+								  Call("cosh",[V.par1,S.par4]),
+								  V.x << V.par4 * Cos(V.par2),
+								  V.y << V.par3 * Sin(V.par2)
 								],
-								[IfElse ( EQ(Par.func, 126), //
-									[ //here
+								[IfElse ( EQ(Par.func, 126), // ESwirl
+									[ V.par1 << V.r2 + 1.0, //tmp
+									  V.par2 << 2.0 * Par.X, //tmp2
+									  V.par3 << V.par1 + V.par2,
+									  IfElse(LT(V.par3,0.0),[V.par3 << 0.0],[V.par3 << Sqrt(V.par3)]),
+									  V.par4 << V.par1 - V.par2,
+									  IfElse(LT(V.par4,0.0),[V.par4 << 0.0],[V.par4 << Sqrt(V.par4)]),
+									  V.par1 << 0.5 * (V.par3 + V.par4),
+									  If(LT(V.par1,1.0),[V.par1 << 1.0]), // xmax
+									  V.par2 << Par.X / V.par1,
+									  IfElse(GT(V.par2,1.0),[V.par2 << 1.0],[If(LT(V.par2,-1.0),[V.par2 << -1.0])]),
+									  V.par2 << D2R * ACos(V.par2),
+									  If(LT(Par.Y,0.0),[V.par2 << -(V.par2)]), // nu
+									  Call("acosh",[V.par1, S.par1]), // mu
+									  // 		miesko start
+									  V.par2 << V.par2 + V.par1 * V._eswirl_out + V._eswirl_in / V.par1,
+									  // 	miesko stop
+									  V.par2 << R2D * V.par2,
+									  Call("sinh",[V.par1,S.par3]),
+									  Call("cosh",[V.par1,S.par4]),
+									  V.x << V.par4 * Cos(V.par2),
+									  V.y << V.par3 * Sin(V.par2)
 									],
-									[IfElse ( EQ( Par.func, 127), //
-										[ //here
+									[IfElse ( EQ( Par.func, 127), // Eclipse
+										[ V.y << Par.Y,
+										  IfElse( LT(Abs(Par.Y),V._weight),
+											  [ V.par1 << Sqrt(V._weight*V._weight - Par.Y * Par.Y),
+												IfElse( LT(Par.X,V.par1),
+													[ V.par2 << Par.X + V._eclipse_shift * V._weight,
+													  IfElse( GT(Abs(V.par2),V.par1),[V.x << -(Par.X)],[V.x << V.par2])
+													],
+													[V.x << Par.X]
+												) 
+											  ],
+											  [V.x << Par.X]
+										  )
 										],
-										[IfElse ( EQ( Par.func, 128), //
-											[ //here
+										[IfElse ( EQ( Par.func, 128), // Epispiral
+											[  V.par1 << Cos(V._epispiral_n * V.atan2yx),
+											   V.par2 << V._epispiral_holes + Rnd01 * V._epispiral_thickness * (1.0 / V.par1),
+											   V.x << V.par2 * Cos(V.atan2yx),
+											   V.y << V.par2 * Sin(V.atan2yx)
 											],
-											[ // here
+											[ V.par1 << 0.5 / Cos(V._epispiralwf_waves * V.atan2xy), // EpispiralWF
+											  V.x << Sin(V.atan2xy) * V.par1,
+											  V.y << Cos(V.atan2xy) * V.par1
 											]
 										)]
 									)]
