@@ -4,7 +4,7 @@ class FFVars extends GenerateScratch {
 
 // do not display below variables, they are already defined
 	void init() {
-		VariableG.varSet.varIgnore += ['x','y','r','r2','par1','par2','par3','par4','par5','par6','par7','atan2xy','atan2yx','_a','_b','_c','_d','_e','_f','_weight', 'temp_x','temp_y'] as Set
+		VariableG.varSet.varIgnore += ['x','y','r','r2','parfosc','par1','par2','par3','par4','par5','par6','par7','atan2xy','atan2yx','_a','_b','_c','_d','_e','_f','_weight', 'temp_x','temp_y'] as Set
 	}
 		
 	def fractal_flame = false // determine which script generate (difference in precalculations, eg. preblur
@@ -39,6 +39,26 @@ class FFVars extends GenerateScratch {
 	}
 	
 	def flFunctions =  { [
+		
+		Def("gdoffsFlip","gdoffs flip %n %n %n into %m.var",['A','B','C','VAR'],
+			[ V.set( Par.VAR, Par.C * (Par.A - Par.B) + Par.A)]
+		),
+	
+		Def("gdoffsFclp","gdoffs fclp %n into %m.var",['A','VAR'],
+			[ IfElse( LT(Par.A,0.0),
+				[ V.set(Par.Var, -( Abs(Par.A) % 1.0 ))],
+				[ V.set(Par.Var,  Abs(Par.A) % 1.0 )],
+			  )
+			]
+		),
+	
+		Def("gdoffsFosc","gdoffs fosc %n %n into %m.var",['P','A','VAR'],
+			[ V.parfosc << -(Cos(360.0 * Par.P * Par.A)),
+			  V.parfosc << (V.parfosc + 1.0) / 2.0,
+			  Call("gdoffsFclp",[V.parfosc,S.parfosc]),
+			  V.set( Par.VAR, V.parfosc)
+			]
+		),
 	
 		Def("pow", 'power %n ^ %n into %m.var',['X','A','VAR'],
 			[ V.set( Par.VAR, Exp( Par.A * Ln( Par.X))) ]
@@ -1689,6 +1709,186 @@ def flCalc120_129 = { [
 	)
 ]}
 
+def flPrecalc130_139 = {
+	[
+		Script([
+			// Fibonacci2
+			V._fibonacci2_fnatlog << Log(M_PHI),
+			V._fibonacci2_sc << Rnd(-1.01,1.01),
+			V._fibonacci2_sc2 << Rnd(-1.01,1.01),
+			// Fourth
+			V._fourth_spin << Rnd(-M_2PI,M_2PI),
+			V._fourth_space << Rnd(-0.5,0.5),
+			V._fourth_twist << Rnd(-M_PI,M_PI),
+			V._fourth_x << Rnd(-0.5,0.5),
+			V._fourth_y << Rnd(-0.5,0.5),
+			// GDoffs
+			Call("gdoffsFosc",[Rnd(-0.2,0.2),1.0,S._gdoffs_osc_x]),
+			Call("gdoffsFosc",[Rnd(-0.2,0.2),1.0,S._gdoffs_osc_y]),
+			V._gdoffs_gdocx << Rnd(-0.5,0.5),
+			V._gdoffs_gdocy << Rnd(-0.5,0.5),
+			V._gdoffs_gdos << Rnd(0,1),
+			V._gdoffs_gdob << Rnd(-1.01,1.01) / Rnd(0.1,1.0),
+			// GlynnSim1
+			V._glynnsim1_radius1 << Rnd(0.1,0.4),
+			V._glynnsim1_radius << V._glynnsim1_radius1 + Rnd(0.1,0.6),
+			V._glynnsim1_thickness << Rnd(0.1,0.4),
+			V._glynnsim1_pow << Rnd(1.01, 5.01),
+			V._glynnsim1_contrast << Rnd(0.2,0.9),
+			V.par1 << R2D * M_PI / 180.0 * Rnd(100,260),
+			V._glynnsim1_x1 << V._glynnsim1_radius * Cos(V.par1),
+			V._glynnsim1_y1 << V._glynnsim1_radius * Sin(V.par1),
+		])
+	]
+}
+
+
+def flCalc130_139 = { [
+Def("calc_130_139", 'calculate 130-139 %n %n %n',['func','X','Y'],
+	[
+		IfElse( EQ( Par.func,130), // Fibonacci2
+			[ V.par1 << Par.Y * V._fibonacci2_fnatlog * R2D,
+			  V.par2 << -(R2D) * (Par.X * M_PI + Par.Y * V._fibonacci2_fnatlog),
+			  V.par3 << V._fibonacci2_sc * Exp(V._fibonacci2_sc2 * Par.X * V._fibonacci2_fnatlog),
+			  V.par4 << V._fibonacci2_sc * Exp(V._fibonacci2_sc2 * -(Par.X * V._fibonacci2_fnatlog - Par.Y * M_PI)),
+			  V.x << (V.par3 * Cos(V.par1) - V.par4 * Cos(V.par2)) / M_SQRT5,
+			  V.y << (V.par3 * Sin(V.par1) - V.par4 * Sin(V.par2)) / M_SQRT5,
+			],
+			[IfElse ( EQ( Par.func, 131), // FlipCircle
+				[ IfElse( GT(V.r2, V._weight * V._weight),
+					[V.y << Par.Y],[V.y << -(Par.Y)]
+				  ),
+				  V.x << Par.X
+				],
+				[IfElse ( EQ( Par.func, 132), // FlipY
+					[ IfElse( GT(Par.X,0.0), [V.y << -(Par.Y)],[V.y << Par.Y]),
+					  V.x << Par.X
+					],
+					[IfElse ( EQ( Par.func, 133), // Fourth
+						[ 
+						  IfElse( GT(Par.X,0.0) & GT(Par.Y,0.0),
+							[ V.x << Cos(V.atan2xy) / V.r,
+							  V.y << Sin(V.atan2xy) / V.r
+							],
+							[ IfElse( GT(Par.X,0.0) & LT(Par.Y,0.0),
+								[ V.par1 << V._weight * V._weight,
+								  IfElse( LT(V.r2,V.par1),
+									  [ V.par2 << Sqrt(V.par1 / V.r2 - 1.0),
+										V.x << V.par2 * Par.X,
+										V.y << V.par2 * Par.Y
+									  ],
+								  	  [ V.x << Par.X,
+										V.y << Par.Y
+									  ]
+								  )
+								],
+								[ IfElse( LT(Par.X,0.0) & GT(Par.Y,0.0),
+									[ V.par1 << Par.X - V._fourth_x,
+									  V.par2 << Par.Y + V._fourth_y,
+									  V.par3 << Sqrt(V.par1 * V.par1 + V.par2 * V.par2),
+									  IfElse( LT(V.par3,V._weight),
+										  [ Call("atan2xy",[V.par2,V.par1,S.par4]),
+											V.par4 << R2D * (D2R * V.par4 + V._fourth_spin + V._fourth_twist * (V._weight - V.par3)),
+											V.x << V.par3 * Cos(V.par4) + V._fourth_x,
+											V.y << V.par3 * Sin(V.par4) + V._fourth_y,
+										  ],
+										  [ V.par4 << 1.0 + V._fourth_space / V.par3,
+											V.x << V.par4 * V.par1 + V._fourth_x,
+											V.y << V.par4 * V.par2 + V._fourth_y,
+										  ]
+									  )
+									],
+									[ V.x << Par.X,
+									  V.y << Par.Y
+									])
+								])
+							])
+						],
+						[IfElse ( EQ( Par.func, 134), // GDOffs
+							[ V.par1 << Par.X + V._gdoffs_gdocx, // in_x
+							  V.par2 << Par.Y + V._gdoffs_gdocy, // in_y
+							  IfElse( EQ( V._gdoffs_gdos,1.0),
+								  [ Call("gdoffsFosc",[V.par1,4.0,S.par3]),
+									Call("gdoffsFlip",[V.par1,V.par3,V._gdoffs_osc_x,S.par3]),
+									Call("gdoffsFclp",[V._gdoffs_gdob * V.par1,S.par4]),
+									Call("gdoffsFosc",[V.par4,4.0,S.par4]),
+									Call("gdoffsFlip",[V.par3, V.par4, V._gdoffs_osc_x, S.x]),
+									
+									Call("gdoffsFosc",[V.par2,4.0,S.par3]),
+									Call("gdoffsFlip",[V.par2,V.par3,V._gdoffs_osc_x,S.par3]),
+									Call("gdoffsFclp",[V._gdoffs_gdob * V.par2,S.par4]),
+									Call("gdoffsFosc",[V.par4,4.0,S.par4]),
+									Call("gdoffsFlip",[V.par3, V.par4, V._gdoffs_osc_x, S.y]),
+								  ],
+							  	  [ Call("gdoffsFosc",[V.par1,4.0,S.par3]),
+									Call("gdoffsFlip",[V.par1,V.par3,V._gdoffs_osc_x,S.par3]),
+									Call("gdoffsFclp",[V._gdoffs_gdob * V.par1,S.par4]),
+									Call("gdoffsFosc",[V.par4,4.0,S.par4]),
+									Call("gdoffsFlip",[V.par3, V.par4, V._gdoffs_osc_x, S.x]),
+									
+									Call("gdoffsFosc",[V.par2,4.0,S.par3]),
+									Call("gdoffsFlip",[V.par2,V.par3,V._gdoffs_osc_y,S.par3]),
+									Call("gdoffsFclp",[V._gdoffs_gdob * V.par2,S.par4]),
+									Call("gdoffsFosc",[V.par4,4.0,S.par4]),
+									Call("gdoffsFlip",[V.par3, V.par4, V._gdoffs_osc_y, S.y]),
+								  ]
+							  )
+							],
+							[IfElse ( EQ( Par.func, 135), // GlynnSim1
+								[ IfElse( LT(V.r,V._glynnsim1_radius),
+									  [ V.par1 << V._glynnsim1_radius1 * (V._glynnsim1_thickness+ (1.0 - V._glynnsim1_thickness) * Rnd01),
+										V.par2 << 2.0 * M_PI * R2D * Rnd01,
+										V.x << V.par1 * Cos(V.par2) + V._glynnsim1_x1,
+										V.y << V.par1 * Sin(V.par2) + V._glynnsim1_y1
+									  ],
+									  [ V.par1 << V._glynnsim1_radius / V.r,
+										Call("pow",[V.par1,V._glynnsim1_pow,S.par2]),
+										IfElse( GT(Rnd01,V._glynnsim1_contrast * V.par2),
+											[ V.x << Par.X,
+											  V.y << Par.Y
+											],
+											[ V.par1 << V.par1 * V.par1,
+											  V.x << V.par1 * Par.X,
+											  V.y << V.par1 * Par.Y 
+											]
+										),
+									  	V.par1 << V.x - V._glynnsim1_x1,
+										V.par2 << V.y - V._glynnsim1_y1,
+										V.par3 << V.par1 * V.par1 + V.par2 * V.par2,
+										If( LT(V.par3, V._glynnsim1_radius1 * V._glynnsim1_radius1),
+											[ V.par1 << V._glynnsim1_radius1 * (V._glynnsim1_thickness+ (1.0 - V._glynnsim1_thickness) * Rnd01),
+											  V.par2 << 2.0 * M_PI * R2D * Rnd01,
+											  V.x << V.par1 * Cos(V.par2) + V._glynnsim1_x1,
+											  V.y << V.par1 * Sin(V.par2) + V._glynnsim1_y1
+											]
+										)
+									  ]
+								  )
+								],
+								[IfElse ( EQ(Par.func, 136), //
+									[ //here
+									],
+									[IfElse ( EQ( Par.func, 137), //
+										[ //here
+										],
+										[IfElse ( EQ( Par.func, 138), //
+											[ //here
+											],
+											[ // here
+											]
+										)]
+									)]
+								)]
+							)]
+						)]
+					)]
+				)]
+			)]
+		)
+	]
+	)
+]}
+
 	def flPrecalc0_99 = { [
 	
 	Script([  // precalculations
@@ -1949,8 +2149,8 @@ def gen = new FFVars();
 
 gen.printScripts (
 	gen.flFunctions() + 
-	gen.flCalc120_129() +
-	gen.flPrecalc120_129()
+	gen.flCalc130_139() +
+	gen.flPrecalc130_139()
 )
 
 gen.printVariables()
