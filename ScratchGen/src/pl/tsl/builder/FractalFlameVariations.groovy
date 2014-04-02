@@ -1732,12 +1732,32 @@ def flPrecalc130_139 = {
 			// GlynnSim1
 			V._glynnsim1_radius1 << Rnd(0.1,0.4),
 			V._glynnsim1_radius << V._glynnsim1_radius1 + Rnd(0.1,0.6),
-			V._glynnsim1_thickness << Rnd(0.1,0.4),
+			V._glynnsim1_thickness << Rnd(0.1,0.9),
 			V._glynnsim1_pow << Rnd(1.01, 5.01),
 			V._glynnsim1_contrast << Rnd(0.2,0.9),
 			V.par1 << Rnd(30,330),
 			V._glynnsim1_x1 << V._glynnsim1_radius * Cos(V.par1),
 			V._glynnsim1_y1 << V._glynnsim1_radius * Sin(V.par1),
+			// GlynnSim2
+			V._glynnsim2_thickness << Rnd(0.1,0.9),
+			V._glynnsim2_contrast << Rnd(0.2,0.9),
+			V._glynnsim2_radius << Rnd(0.1,1.2),
+			V._glynnsim2_pow << Rnd(1.01, 5.01),
+			V._glynnsim2_phi10 << Rnd(30,200),
+			V._glynnsim2_delta << Rnd(10,150),
+			V._glynnsim2_gamma << V._glynnsim2_thickness * (2.0 * V._glynnsim2_radius + V._glynnsim2_thickness) / (V._glynnsim2_radius + V._glynnsim2_thickness),
+			// GlynnSim3
+			V._glynnsim3_radius << Rnd(0.1,1.2),
+			V._glynnsim3_radius1 << V._glynnsim3_radius + Rnd(0.1,0.9),
+			V._glynnsim3_radius2 << V._glynnsim3_radius * V._glynnsim3_radius / V._glynnsim3_radius1,
+			V._glynnsim3_gamma << V._glynnsim3_radius1 / (V._glynnsim3_radius1 + V._glynnsim3_radius2),
+			V._glynnsim3_pow << Rnd(1.01, 5.01),
+			V._glynnsim3_contrast << Rnd(0.2,0.9),
+			// HeartWF
+			V._heartwf_scale_x << Rnd(0.7,1.3),
+			V._heartwf_shift_t << Rnd(-0.3,0.3),
+			V._heartwf_scale_t_left << Rnd(0.8,1.2),
+			V._heartwf_scale_t_right << Rnd(0.8,1.2),
 		])
 	]
 }
@@ -1865,16 +1885,89 @@ Def("calc_130_139", 'calculate 130-139 %n %n %n',['func','X','Y'],
 									  ]
 								  )
 								],
-								[IfElse ( EQ(Par.func, 136), //
-									[ //here
-									],
-									[IfElse ( EQ( Par.func, 137), //
-										[ //here
+								[IfElse ( EQ(Par.func, 136), // GlynnSim2
+									[ IfElse( LT(V.r,V._glynnsim2_radius),
+										[ V.par1 << V._glynnsim2_radius + V._glynnsim2_thickness - V._glynnsim2_gamma * Rnd01,
+										  V.par2 << V._glynnsim2_phi10 + V._glynnsim2_delta * Rnd01,
+										  V.x << V.par1 * Cos(V.par2),
+										  V.y << V.par1 * Sin(V.par2)
 										],
-										[IfElse ( EQ( Par.func, 138), //
-											[ //here
+										[ V.par1 << V._glynnsim2_radius / V.r,
+										  Call("pow",[V.par1, V._glynnsim2_pow,S.par2]),
+										  IfElse( GT(Rnd01,V._glynnsim2_contrast * V.par2),
+											  [ V.x << Par.X,
+												V.y << Par.Y
+											  ],
+										  	  [ V.par1 << V.par1 * V.par1,
+												V.x << V.par1 * Par.X,
+												V.y << V.par1 * Par.Y
+											  ]
+										  )
+										]
+									  )
+									],
+									[IfElse ( EQ( Par.func, 137), // GlynnSim3
+										[ IfElse( LT(V.r,V._glynnsim3_radius1),
+											[ V.par1 << 2.0 * R2D * M_PI * Rnd01,
+											  IfElse( LT(Rnd01,V._glynnsim3_gamma),[V.par2 << V._glynnsim3_radius1],[V.par2 << V._glynnsim3_radius2]),
+										  	  V.x << V.par2 * Cos(V.par1),
+											  V.y << V.par2 * Sin(V.par1)
+										],
+										[ V.par1 << V._glynnsim3_radius / V.r,
+										  Call("pow",[V.par1, V._glynnsim3_pow,S.par2]),
+										  IfElse( GT(Rnd01,V._glynnsim3_contrast * V.par2),
+											  [ V.x << Par.X,
+												V.y << Par.Y
+											  ],
+										  	  [ V.par1 << V.par1 * V.par1,
+												V.x << V.par1 * Par.X,
+												V.y << V.par1 * Par.Y
+											  ]
+										  )
+										]
+									  )
+										],
+										[IfElse ( EQ( Par.func, 138), // Glynnia
+											[ IfElse( GT(V.r,0.9),
+												[ IfElse( GT(Rnd01,0.5),
+													[ V.par1 << Sqrt(V.r + Par.X),
+													  V.x << M_SQRT2/2.0 * V.par1,
+													  V.y << (-M_SQRT2/2.0) / V.par1 * Par.Y 
+													],
+													[ V.par1 << V.r + Par.X,
+													  V.par2 << Sqrt(V.r * (Par.Y * Par.Y + V.par1 * V.par1)),
+													  V.x << V.par1 / V.par2,
+													  V.y << Par.Y / V.par2
+													]
+												  )
+												],
+												[ IfElse( GT(Rnd01,0.5),
+													[ V.par1 << Sqrt(V.r + Par.X),
+													  V.x << (-M_SQRT2/2.0) * V.par1,
+													  V.y << (-M_SQRT2/2.0) / V.par1 * Par.Y 
+													],
+													[ V.par1 << V.r + Par.X,
+													  V.par2 << Sqrt(V.r * (Par.Y * Par.Y + V.par1 * V.par1)),
+													  V.x << -(V.par1) / V.par2,
+													  V.y << Par.Y / V.par2
+													]
+												  )
+												]
+											  )
 											],
-											[ // here
+											[ // HeartWF
+											  IfElse( LT(V.atan2xy,0),
+												  [ V.par1 << -D2R / M_PI * 60.0 * V.atan2xy * V._heartwf_scale_t_left - V._heartwf_shift_t,
+													If(GT(V.par1,60.0), [V.par1 << 60.0]),
+													V.par2 << -0.001 * (-(V.par1) * V.par1 + 40.0 * V.par1 + 1200) * Sin(V.par1) * V.r,
+												  ],
+												  [ V.par1 << D2R / M_PI * 60.0 * V.atan2xy * V._heartwf_scale_t_right - V._heartwf_shift_t,
+													If(GT(V.par1,60.0), [V.par1 << 60.0]),
+													V.par2 << 0.001 * (-(V.par1) * V.par1 + 40.0 * V.par1 + 1200) * Sin(V.par1) * V.r,
+												  ]
+											  ),
+											  V.y << -0.001 * (-(V.par1) * V.par1 + 40.0 * V.par1 + 400) * Cos(V.par1) * V.r,
+											  V.x << V.par2 * V._heartwf_scale_x
 											]
 										)]
 									)]
