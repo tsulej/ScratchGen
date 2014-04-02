@@ -1714,8 +1714,8 @@ def flPrecalc130_139 = {
 		Script([
 			// Fibonacci2
 			V._fibonacci2_fnatlog << Log(M_PHI),
-			V._fibonacci2_sc << Rnd(-1.01,1.01),
-			V._fibonacci2_sc2 << Rnd(-1.01,1.01),
+			V._fibonacci2_sc << Rnd(0.25,1.01) * Rnd(0,1)*2.0-1.0,
+			V._fibonacci2_sc2 << Rnd(0.25,1.01) * Rnd(0,1)*2.0-1.0,
 			// Fourth
 			V._fourth_spin << Rnd(-M_2PI,M_2PI),
 			V._fourth_space << Rnd(-0.5,0.5),
@@ -1735,7 +1735,7 @@ def flPrecalc130_139 = {
 			V._glynnsim1_thickness << Rnd(0.1,0.4),
 			V._glynnsim1_pow << Rnd(1.01, 5.01),
 			V._glynnsim1_contrast << Rnd(0.2,0.9),
-			V.par1 << R2D * M_PI / 180.0 * Rnd(100,260),
+			V.par1 << Rnd(30,330),
 			V._glynnsim1_x1 << V._glynnsim1_radius * Cos(V.par1),
 			V._glynnsim1_y1 << V._glynnsim1_radius * Sin(V.par1),
 		])
