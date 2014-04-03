@@ -101,6 +101,199 @@ class FFVars extends GenerateScratch {
 		),
 ] }
 
+	def flPrecalc0_99 = { [
+		
+		Script([  // precalculations
+			// Blob
+			V._blob_low << Rnd(0.2, 0.7),
+			V._blob_bdiff << Rnd(0.8, 1.2) - V._blob_low,
+			V._blob_waves << Rnd(2,7),
+			// PDJ
+			V._pdj_a << R2D * Rnd(-2.99, 2.99),
+			V._pdj_b << R2D * Rnd(-2.99, 2.99),
+			V._pdj_c << R2D * Rnd(-2.99, 2.99),
+			V._pdj_d << R2D * Rnd(-2.99, 2.99),
+			// Fan2
+			V._fan2_x << Rnd(0.2,0.8),
+			V._fan2_x << R2D * M_PI * V._fan2_x * V._fan2_x,
+			V._fan2_y << R2D * Rnd(2,7),
+			// Rings2
+			V._rings2_val << Rnd(0.1,1.2),
+			V._rings2_val << V._rings2_val * V._rings2_val,
+			// Perspective
+			V._perspective_dist << Rnd(0.99,3.01),
+			V.par1 << R2D * M_PI / 2.0 * Rnd(0.3,1.0),
+			V._perspective_vsin << Sin(V.par1),
+			V._perspective_vfcos << V._perspective_dist * Cos(V.par1),
+			// JuliaN
+			V._julian_power << Rnd(4,10),
+			V._julian_dist << Rnd(0.5,2.0),
+			V._julian_cn << V._julian_dist / V._julian_power / 2.0,
+			// JuliaScope
+			V._juliascope_power << Rnd(4,10),
+			V._juliascope_dist << Rnd(0.5,2.0),
+			V._juliascope_cn << V._juliascope_dist / V._juliascope_power / 2.0,
+			// RadialBlur
+			V.par1 << R2D * M_PI / 2.0 * Rnd(-1.01,1.01),
+			V._radialblur_spinvar << Sin(V.par1),
+			V._radialblur_zoomvar << Cos(V.par1),
+			// Pie
+			V._pie_slices << Rnd(3,10),
+			V._pie_rotation << Rnd(-2.01,2.01),
+			V._pie_thickness << Rnd(0.2,0.8),
+			// Ngon
+			V._ngon_sides << 2.0 * M_PI * R2D / Rnd(3,9),
+			V._ngon_power << Rnd(1.01, 4.0) / 2.0,
+			V._ngon_circle << Rnd(0.5, 1.5),
+			V._ngon_corners << Rnd(0.5, 1.5),
+			// Curl
+			V._curl_c1 << Rnd(0.1, 0.7),
+			V._curl_c2 << Rnd(0.1, 0.7),
+			// Rectangles
+			V._rectangles_x << Rnd(0.01,1),
+			V._rectangles_y << Rnd(0.01,1),
+			// Disc2
+			V._disc2_timespi << Rnd(-2.01,2.01) * M_PI * R2D,
+			V.par1 << Rnd(-8.01,8.01),
+			V._disc2_sinadd << Sin(V.par1 * R2D),
+			V._disc2_cosadd << Cos(V.par1 * R2D) - 1.0,
+			If( GT ( V.par1, 2.0 * M_PI),
+				[ V.par2 << 1.0 - 2 * M_PI + V.par1,
+					V._disc2_sinadd << V._disc2_sinadd * V.par2,
+					V._disc2_cosadd << V._disc2_cosadd * V.par2
+				]
+			),
+			If( LT ( V.par1, -2.0 * M_PI),
+				[ V.par2 << 1.0 + 2 * M_PI + V.par1,
+					V._disc2_sinadd << V._disc2_sinadd * V.par2,
+					V._disc2_cosadd << V._disc2_cosadd * V.par2
+				]
+			),
+			// Supershape
+			V._supershape_rnd << Rnd01,
+			V._supershape_pm_4 << Rnd(1,7) / 4.0,
+			V._supershape_pneg1_n1 << -1.0 / Rnd(0.1,10.0),
+			V._supershape_n2 << Rnd(0.01,20.0),
+			V._supershape_n3 << Rnd(0.01,20.0),
+			V._supershape_holes << Rnd(-1.01,1.01),
+			// Flower
+			V._flower_petals << Rnd(3,8),
+			V._flower_holes << Rnd(-0.5,0.2),
+			// Conic
+			V._conic_eccentricity << Rnd(0.3,1.0),
+			V._conic_holes << Rnd01,
+			// Parabola
+			V._parabola_height << Rnd(0.5,1.5),
+			V._parabola_width << Rnd(0.5,1.5),
+			// Bent2
+			V._bent2_x << Rnd(-1.5,1.5),
+			V._bent2_y << Rnd(-1.5,1.5),
+			// Bipolar
+			V._bipolar_shift << -M_PI_2 * Rnd(-1.5,1.5),
+			// Cell
+			V._cell_size << Rnd(-2.5,2.5),
+			// CPow
+			V._cpow_power << Rnd(1,5),
+			V._cpow_r << Rnd(1.01,3.0) / V._cpow_power,
+			V._cpow_i << Rnd(-0.5,0.5) / V._cpow_power,
+			V._cpow_va << 2.0 * M_PI / V._cpow_power,
+			// Curve
+			V._curve_xamp << Rnd(-2.5,2.5),
+			V._curve_yamp << Rnd(-2.5,2.5),
+			V._curve_xlength << Rnd(0.9,2.7),
+			V._curve_xlength << V._curve_xlength * V._curve_xlength,
+			V._curve_ylength << Rnd(0.9,2.7),
+			V._curve_ylength << V._curve_ylength * V._curve_ylength,
+			// Esher
+			V.par1 << Rnd(-3.01,3.01) * R2D,
+			V._esher_vd << 0.5 * Sin(V.par1),
+			V._esher_vc << 0.5 * (1.0 + Cos(V.par1)),
+			// Lazysuzan
+			V._lazysusan_spin << R2D * Rnd(-3.01,3.01), // in degrees
+			V._lazysusan_space << Rnd(-2.01,1.01), // in degrees
+			V._lazysusan_twist << R2D * Rnd(-2.01,2.01), // in degrees
+			V._lazysusan_x << Rnd(-0.5,0.5),
+			V._lazysusan_y << Rnd(-0.5,0.5),
+			// Modulus
+			V._modulus_x << Rnd(-1.01,1.01),
+			V._modulus_y << Rnd(-1.01,1.01),
+			// Oscilloscope
+			V._oscilloscope_separation << Rnd(0.01, 2.01),
+			V._oscilloscope_frequency << 360.0 * Rnd(-3.01,3.01),
+			V._oscilloscope_amplitude << Rnd(1.01,3.01),
+			V._oscilloscope_damping << Rnd(0,1),
+			// Popcorn2
+			V._popcorn2_x << Rnd(-0.4,0.4),
+			V._popcorn2_y << Rnd(-0.4,0.4),
+			V._popcorn2_c << R2D * Rnd(-5.01,5.01),
+			// Separation
+			V._separation_x << Rnd01,
+			V._separation_x << V._separation_x * V._separation_x,
+			V._separation_xinside << Rnd(-1.01,1.01),
+			V._separation_y << Rnd01,
+			V._separation_y << V._separation_y * V._separation_y,
+			V._separation_yinside << Rnd(-1.01,1.01),
+			// Split
+			V._split_xsize << Rnd(-0.8,0.8),
+			V._split_ysize << Rnd(-0.8,0.8),
+			// Splits
+			V._splits_x << Rnd(-1.01,1.01),
+			V._splits_y << Rnd(-1.01,1.01),
+			// Stripes
+			V._stripes_space << 1.0 - Rnd(-0.8,0.8),
+			V._stripes_warp << Rnd(-4.01,4.01),
+			// Wedge
+			V._wedge_angle << Rnd(-3.01,3.01),
+			V._wedge_hole << Rnd(-0.5,0.5),
+			V._wedge_count << Rnd(1,6),
+			V._wedge_swirl << Rnd(-1.01,1.01),
+			// WegdeJulia
+			V._wedgejulia_angle << Rnd(-3.01,3.01),
+			V._wedgejulia_count << Rnd(2,7),
+			V._wedgejulia_power << Rnd(2,7),
+			V._wedgejulia_cf << 1.0 - 0.5 * M_1_PI * V._wedgejulia_angle * V._wedgejulia_count,
+			V._wedgejulia_cn << Rnd(1.01,4.01) / V._wedgejulia_power / 2.0,
+			// WedgeSph
+			V._wedgesph_angle << Rnd(-3.01,3.01),
+			V._wedgesph_count << Rnd(1,6),
+			V._wedgesph_hole << Rnd(-0.5,0.5),
+			V._wedgesph_swirl << Rnd(-1.01,1.01),
+			// Whorl
+			V._whorl_inside << Rnd(-1.01,1.01),
+			V._whorl_outside << Rnd(-1.01,1.01),
+			// Waves2
+			V._waves2_freqx << Rnd(0.01,4.01),
+			V._waves2_scalex << Rnd(0.5,1.5),
+			V._waves2_freqy << Rnd(0.01,4.01),
+			V._waves2_scaley << Rnd(0.5,1.5),
+			// Auger
+			V._auger_freq << R2D * Rnd(3,6),
+			V._auger_scale << Rnd(0.1,0.8),
+			V._auger_sym << Rnd(-1.01,1.01),
+			V._auger_weight << Rnd(-1.01,1.01),
+			// Flux
+			V._flux_spread << 2.0 + Rnd(0.5,1.01),
+			// Mobius
+			V._mobius_re_a << Rnd(-1.01, 1.01),
+			V._mobius_im_a << Rnd(-1.01, 1.01),
+			V._mobius_re_b << Rnd(-1.01, 1.01),
+			V._mobius_im_b << Rnd(-1.01, 1.01),
+			V._mobius_re_c << Rnd(-1.01, 1.01),
+			V._mobius_im_c << Rnd(-1.01, 1.01),
+			V._mobius_re_d << Rnd(-1.01, 1.01),
+			V._mobius_im_d << Rnd(-1.01, 1.01),
+			// Truchet
+			V._truchet_seed << Rnd(0,65535),
+			V._truchet_seed2 << Sqrt(V._truchet_seed + V._truchet_seed / 2.0 + 0.000000001) / (V._truchet_seed * 0.5 + 0.000000001) * 0.25,
+			V._truchet_exponent << Rnd(0.5,2.0), // exponent
+			V._truchet_onen << 1.0 / V._truchet_exponent,
+			Call("pow",[2.0, 1.0/ V._truchet_exponent, S.par1]),
+			V._truchet_rmax << 0.5 * Rnd(0.2,0.8) * (V.par1 - 1.0),
+			V._truchet_size << Rnd(0.8,3.0),
+			V.par1 << Rnd(-360,0),
+			V._truchet_scale << Cos(V.par1) - Sin(V.par1)
+		])
+	] }
 
 	def flCalc0_49 =  {  [
 	
@@ -1012,6 +1205,66 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 	)
 ] }
 
+	
+	
+		def flPrecalc100_109 = {
+			[
+				Script([
+					// BCollide
+					V.par1 << Rnd(1.1,8.1),
+					V._bcollide_bcn_pi << M_1_PI * V.par1,
+					V._bcollide_pi_bcn << M_PI / V.par1,
+					V._bcollide_bca_bcn << (M_PI * Rnd(-0.5,1)) / V.par1,
+					// BMod
+					V._bmod_radius << Rnd(0.01,M_2PI),
+					V._bmod_distance << Rnd(0.01,2.0),
+					// BSwirl
+					V._bswirl_in << Rnd(-2.01,2.01),
+					V._bswirl_out << Rnd(-2.01,2.01),
+					// BTransform
+					V._btransform_rotate << Rnd(-M_2PI,M_2PI),
+					V._btransform_power << Rnd(1.01,6.0),
+					V._btransform_move << Rnd(-0.5,0.5),
+					V._btransform_split << Rnd(-1.01,1.01),
+					// BWraps7
+					V._bwraps7_cellsize << Rnd(0.4,1.5),
+					V.par1 << Rnd(0.5,2.5), // gain
+					V._bwraps7_g2 << V.par1 * V.par1 + 1.0e-6,
+					V._bwraps7_inner_twist << Rnd(-M_PI,M_PI),
+					V._bwraps7_outer_twist << Rnd(-M_PI,M_PI),
+					V.par1 << Rnd(0,0.7), // space
+					V.par1 << 0.5 * (V._bwraps7_cellsize / (1.0 + V.par1 * V.par1)), // radius
+					V.par2 << V._bwraps7_g2 * V.par1,
+					IfElse( GT(V.par2,2.0),
+						[V.par2 << 1.0],
+						[V.par2 << V.par2 * (1.0 / ( (V.par2 * V.par2) / 4.0 + 1.0 ))]
+					),
+					V._bwraps7_r2 << V.par1 * V.par1,
+					V._bwraps7_rfactor << V.par1 / V.par2,
+					// Barycentroid
+					V._barycentroid_a << Rnd(-1.01,1.01),
+					V._barycentroid_b << Rnd(-1.01,1.01),
+					V._barycentroid_c << Rnd(-1.01,1.01),
+					V._barycentroid_d << Rnd(-1.01,1.01),
+					V._barycentroid_dot00 << V._barycentroid_a * V._barycentroid_a + V._barycentroid_b + V._barycentroid_b,
+					V._barycentroid_dot01 << V._barycentroid_a * V._barycentroid_c + V._barycentroid_b * V._barycentroid_d,
+					V._barycentroid_dot11 << V._barycentroid_c * V._barycentroid_c + V._barycentroid_d * V._barycentroid_d,
+					V._barycentroid_invdenom << 1.0 / (V._barycentroid_dot00 * V._barycentroid_dot11 - V._barycentroid_dot01 * V._barycentroid_dot01),
+					// BlockY
+					V._blocky_x << (1.0 - 2.0 * Rnd(0,1)) * Rnd(0.9,1.01),
+					V._blocky_y << (1.0 - 2.0 * Rnd(0,1)) * Rnd(0.9,1.01),
+					V._blocky_mp << (1.0 - 2.0 * Rnd(0,1)) * Rnd(1.5,6.01),
+					// BlurZoom
+					V._blurzoom_length << Rnd(-1.01,1.5),
+					V._blurzoom_x << Rnd(-1.01,1.01),
+					V._blurzoom_y << Rnd(-1.01,1.01),
+					// Boarders2
+					V._boarders2_c << Rnd01 + 0.1,
+					V._boarders2_cl << V._boarders2_c * (Rnd01 + 0.1),
+					V._boarders2_cr << V._boarders2_c + V._boarders2_c * (Rnd01 + 0.1)
+				])
+			]
+		}
 
 	def flCalc100_109 = { [
 	
@@ -1188,55 +1441,6 @@ Def("calc_90_99", 'calculate 90-99 %n %n %n',['func','X','Y'],
 		)
 ]	
 	
-
-
-
-	/* template
-	
-	Def("calc_0_9", 'calculate 0-9 %n %n %n',['func','X','Y'],
-		[
-			IfElse( EQ( Par.func,0), //
-				[ //here
-				],
-				[IfElse ( EQ( Par.func, 1), //
-					[ //here
-					],
-					[IfElse ( EQ( Par.func, 2), //
-						[ //here
-						],
-						[IfElse ( EQ( Par.func, 3), //
-							[ //here
-							],
-							[IfElse ( EQ( Par.func, 4), //
-								[ //here
-								],
-								[IfElse ( EQ( Par.func, 5), //
-									[ //here
-									],
-									[IfElse ( EQ(Par.func, 6), //
-										[ //here
-										],
-										[IfElse ( EQ( Par.func, 7), //
-											[ //here
-											],
-											[IfElse ( EQ( Par.func, 8), //
-												[ //here
-												],
-												[ // here
-												]
-											)]
-										)]
-									)]
-								)]
-							)]
-						)]
-					)]
-				)]
-			)
-		]
-		),
-	
-	*/
  }
 
 def flPrecalc110_119 = {
@@ -1982,260 +2186,117 @@ Def("calc_130_139", 'calculate 130-139 %n %n %n',['func','X','Y'],
 	)
 ]}
 
-	def flPrecalc0_99 = { [
-	
-	Script([  // precalculations
-		// Blob
-		V._blob_low << Rnd(0.2, 0.7),
-		V._blob_bdiff << Rnd(0.8, 1.2) - V._blob_low,
-		V._blob_waves << Rnd(2,7),
-		// PDJ
-		V._pdj_a << R2D * Rnd(-2.99, 2.99),
-		V._pdj_b << R2D * Rnd(-2.99, 2.99),
-		V._pdj_c << R2D * Rnd(-2.99, 2.99),
-		V._pdj_d << R2D * Rnd(-2.99, 2.99),
-		// Fan2
-		V._fan2_x << Rnd(0.2,0.8),
-		V._fan2_x << R2D * M_PI * V._fan2_x * V._fan2_x,
-		V._fan2_y << R2D * Rnd(2,7),
-		// Rings2
-		V._rings2_val << Rnd(0.1,1.2),
-		V._rings2_val << V._rings2_val * V._rings2_val,
-		// Perspective
-		V._perspective_dist << Rnd(0.99,3.01),
-		V.par1 << R2D * M_PI / 2.0 * Rnd(0.3,1.0),
-		V._perspective_vsin << Sin(V.par1),
-		V._perspective_vfcos << V._perspective_dist * Cos(V.par1),
-		// JuliaN
-		V._julian_power << Rnd(4,10),
-		V._julian_dist << Rnd(0.5,2.0),
-		V._julian_cn << V._julian_dist / V._julian_power / 2.0,
-		// JuliaScope
-		V._juliascope_power << Rnd(4,10),
-		V._juliascope_dist << Rnd(0.5,2.0),
-		V._juliascope_cn << V._juliascope_dist / V._juliascope_power / 2.0,
-		// RadialBlur
-		V.par1 << R2D * M_PI / 2.0 * Rnd(-1.01,1.01),
-		V._radialblur_spinvar << Sin(V.par1),
-		V._radialblur_zoomvar << Cos(V.par1),
-		// Pie
-		V._pie_slices << Rnd(3,10),
-		V._pie_rotation << Rnd(-2.01,2.01),
-		V._pie_thickness << Rnd(0.2,0.8),
-		// Ngon
-		V._ngon_sides << 2.0 * M_PI * R2D / Rnd(3,9),
-		V._ngon_power << Rnd(1.01, 4.0) / 2.0,
-		V._ngon_circle << Rnd(0.5, 1.5),
-		V._ngon_corners << Rnd(0.5, 1.5),
-		// Curl
-		V._curl_c1 << Rnd(0.1, 0.7),
-		V._curl_c2 << Rnd(0.1, 0.7),
-		// Rectangles
-		V._rectangles_x << Rnd(0.01,1),
-		V._rectangles_y << Rnd(0.01,1),
-		// Disc2
-		V._disc2_timespi << Rnd(-2.01,2.01) * M_PI * R2D,
-		V.par1 << Rnd(-8.01,8.01),
-		V._disc2_sinadd << Sin(V.par1 * R2D),
-		V._disc2_cosadd << Cos(V.par1 * R2D) - 1.0,
-		If( GT ( V.par1, 2.0 * M_PI),
-			[ V.par2 << 1.0 - 2 * M_PI + V.par1,
-				V._disc2_sinadd << V._disc2_sinadd * V.par2,
-				V._disc2_cosadd << V._disc2_cosadd * V.par2
-			]
-		),
-		If( LT ( V.par1, -2.0 * M_PI),
-			[ V.par2 << 1.0 + 2 * M_PI + V.par1,
-				V._disc2_sinadd << V._disc2_sinadd * V.par2,
-				V._disc2_cosadd << V._disc2_cosadd * V.par2
-			]
-		),
-		// Supershape
-		V._supershape_rnd << Rnd01,
-		V._supershape_pm_4 << Rnd(1,7) / 4.0,
-		V._supershape_pneg1_n1 << -1.0 / Rnd(0.1,10.0),
-		V._supershape_n2 << Rnd(0.01,20.0),
-		V._supershape_n3 << Rnd(0.01,20.0),
-		V._supershape_holes << Rnd(-1.01,1.01),
-		// Flower
-		V._flower_petals << Rnd(3,8),
-		V._flower_holes << Rnd(-0.5,0.2),
-		// Conic
-		V._conic_eccentricity << Rnd(0.3,1.0),
-		V._conic_holes << Rnd01,
-		// Parabola
-		V._parabola_height << Rnd(0.5,1.5),
-		V._parabola_width << Rnd(0.5,1.5),
-		// Bent2
-		V._bent2_x << Rnd(-1.5,1.5),
-		V._bent2_y << Rnd(-1.5,1.5),
-		// Bipolar
-		V._bipolar_shift << -M_PI_2 * Rnd(-1.5,1.5),
-		// Cell
-		V._cell_size << Rnd(-2.5,2.5),
-		// CPow
-		V._cpow_power << Rnd(1,5),
-		V._cpow_r << Rnd(1.01,3.0) / V._cpow_power,
-		V._cpow_i << Rnd(-0.5,0.5) / V._cpow_power,
-		V._cpow_va << 2.0 * M_PI / V._cpow_power,
-		// Curve
-		V._curve_xamp << Rnd(-2.5,2.5),
-		V._curve_yamp << Rnd(-2.5,2.5),
-		V._curve_xlength << Rnd(0.9,2.7),
-		V._curve_xlength << V._curve_xlength * V._curve_xlength,
-		V._curve_ylength << Rnd(0.9,2.7),
-		V._curve_ylength << V._curve_ylength * V._curve_ylength,
-		// Esher
-		V.par1 << Rnd(-3.01,3.01) * R2D,
-		V._esher_vd << 0.5 * Sin(V.par1),
-		V._esher_vc << 0.5 * (1.0 + Cos(V.par1)),
-		// Lazysuzan
-		V._lazysusan_spin << R2D * Rnd(-3.01,3.01), // in degrees
-		V._lazysusan_space << Rnd(-2.01,1.01), // in degrees
-		V._lazysusan_twist << R2D * Rnd(-2.01,2.01), // in degrees
-		V._lazysusan_x << Rnd(-0.5,0.5),
-		V._lazysusan_y << Rnd(-0.5,0.5),
-		// Modulus
-		V._modulus_x << Rnd(-1.01,1.01),
-		V._modulus_y << Rnd(-1.01,1.01),
-		// Oscilloscope
-		V._oscilloscope_separation << Rnd(0.01, 2.01),
-		V._oscilloscope_frequency << 360.0 * Rnd(-3.01,3.01),
-		V._oscilloscope_amplitude << Rnd(1.01,3.01),
-		V._oscilloscope_damping << Rnd(0,1),
-		// Popcorn2
-		V._popcorn2_x << Rnd(-0.4,0.4),
-		V._popcorn2_y << Rnd(-0.4,0.4),
-		V._popcorn2_c << R2D * Rnd(-5.01,5.01),
-		// Separation
-		V._separation_x << Rnd01,
-		V._separation_x << V._separation_x * V._separation_x,
-		V._separation_xinside << Rnd(-1.01,1.01),
-		V._separation_y << Rnd01,
-		V._separation_y << V._separation_y * V._separation_y,
-		V._separation_yinside << Rnd(-1.01,1.01),
-		// Split
-		V._split_xsize << Rnd(-0.8,0.8),
-		V._split_ysize << Rnd(-0.8,0.8),
-		// Splits
-		V._splits_x << Rnd(-1.01,1.01),
-		V._splits_y << Rnd(-1.01,1.01),
-		// Stripes
-		V._stripes_space << 1.0 - Rnd(-0.8,0.8),
-		V._stripes_warp << Rnd(-4.01,4.01),
-		// Wedge
-		V._wedge_angle << Rnd(-3.01,3.01),
-		V._wedge_hole << Rnd(-0.5,0.5),
-		V._wedge_count << Rnd(1,6),
-		V._wedge_swirl << Rnd(-1.01,1.01),
-		// WegdeJulia
-		V._wedgejulia_angle << Rnd(-3.01,3.01),
-		V._wedgejulia_count << Rnd(2,7),
-		V._wedgejulia_power << Rnd(2,7),
-		V._wedgejulia_cf << 1.0 - 0.5 * M_1_PI * V._wedgejulia_angle * V._wedgejulia_count,
-		V._wedgejulia_cn << Rnd(1.01,4.01) / V._wedgejulia_power / 2.0,
-		// WedgeSph
-		V._wedgesph_angle << Rnd(-3.01,3.01),
-		V._wedgesph_count << Rnd(1,6),
-		V._wedgesph_hole << Rnd(-0.5,0.5),
-		V._wedgesph_swirl << Rnd(-1.01,1.01),
-		// Whorl
-		V._whorl_inside << Rnd(-1.01,1.01),
-		V._whorl_outside << Rnd(-1.01,1.01),
-		// Waves2
-		V._waves2_freqx << Rnd(0.01,4.01),
-		V._waves2_scalex << Rnd(0.5,1.5),
-		V._waves2_freqy << Rnd(0.01,4.01),
-		V._waves2_scaley << Rnd(0.5,1.5),
-		// Auger
-		V._auger_freq << R2D * Rnd(3,6),
-		V._auger_scale << Rnd(0.1,0.8),
-		V._auger_sym << Rnd(-1.01,1.01),
-		V._auger_weight << Rnd(-1.01,1.01),
-		// Flux
-		V._flux_spread << 2.0 + Rnd(0.5,1.01),
-		// Mobius
-		V._mobius_re_a << Rnd(-1.01, 1.01),
-		V._mobius_im_a << Rnd(-1.01, 1.01),
-		V._mobius_re_b << Rnd(-1.01, 1.01),
-		V._mobius_im_b << Rnd(-1.01, 1.01),
-		V._mobius_re_c << Rnd(-1.01, 1.01),
-		V._mobius_im_c << Rnd(-1.01, 1.01),
-		V._mobius_re_d << Rnd(-1.01, 1.01),
-		V._mobius_im_d << Rnd(-1.01, 1.01),
-		// Truchet
-		V._truchet_seed << Rnd(0,65535),
-		V._truchet_seed2 << Sqrt(V._truchet_seed + V._truchet_seed / 2.0 + 0.000000001) / (V._truchet_seed * 0.5 + 0.000000001) * 0.25,
-		V._truchet_exponent << Rnd(0.5,2.0), // exponent
-		V._truchet_onen << 1.0 / V._truchet_exponent,
-		Call("pow",[2.0, 1.0/ V._truchet_exponent, S.par1]),
-		V._truchet_rmax << 0.5 * Rnd(0.2,0.8) * (V.par1 - 1.0),
-		V._truchet_size << Rnd(0.8,3.0),
-		V.par1 << Rnd(-360,0),
-		V._truchet_scale << Cos(V.par1) - Sin(V.par1)
-	])
-] }
+def flPrecalc140_149 = {
+	[
+		Script([
+		])
+	]
+}
 
-	def flPrecalc100_109 = {
+
+def flCalc140_149 = { [
+	Def("calc_140_149", 'calculate 140-149 %n %n %n',['func','X','Y'],
 		[
-			Script([ 
-				// BCollide
-				V.par1 << Rnd(1.1,8.1),
-				V._bcollide_bcn_pi << M_1_PI * V.par1,
-				V._bcollide_pi_bcn << M_PI / V.par1,
-				V._bcollide_bca_bcn << (M_PI * Rnd(-0.5,1)) / V.par1,
-				// BMod
-				V._bmod_radius << Rnd(0.01,M_2PI),
-				V._bmod_distance << Rnd(0.01,2.0),
-				// BSwirl
-				V._bswirl_in << Rnd(-2.01,2.01),
-				V._bswirl_out << Rnd(-2.01,2.01),
-				// BTransform
-				V._btransform_rotate << Rnd(-M_2PI,M_2PI),
-				V._btransform_power << Rnd(1.01,6.0),
-				V._btransform_move << Rnd(-0.5,0.5),
-				V._btransform_split << Rnd(-1.01,1.01),
-				// BWraps7
-				V._bwraps7_cellsize << Rnd(0.4,1.5),
-				V.par1 << Rnd(0.5,2.5), // gain
-				V._bwraps7_g2 << V.par1 * V.par1 + 1.0e-6,
-				V._bwraps7_inner_twist << Rnd(-M_PI,M_PI),
-				V._bwraps7_outer_twist << Rnd(-M_PI,M_PI),
-				V.par1 << Rnd(0,0.7), // space
-				V.par1 << 0.5 * (V._bwraps7_cellsize / (1.0 + V.par1 * V.par1)), // radius
-				V.par2 << V._bwraps7_g2 * V.par1,
-				IfElse( GT(V.par2,2.0),
-					[V.par2 << 1.0],
-					[V.par2 << V.par2 * (1.0 / ( (V.par2 * V.par2) / 4.0 + 1.0 ))]
-				),
-				V._bwraps7_r2 << V.par1 * V.par1,
-				V._bwraps7_rfactor << V.par1 / V.par2,
-				// Barycentroid
-				V._barycentroid_a << Rnd(-1.01,1.01),
-				V._barycentroid_b << Rnd(-1.01,1.01),
-				V._barycentroid_c << Rnd(-1.01,1.01),
-				V._barycentroid_d << Rnd(-1.01,1.01),
-				V._barycentroid_dot00 << V._barycentroid_a * V._barycentroid_a + V._barycentroid_b + V._barycentroid_b,
-				V._barycentroid_dot01 << V._barycentroid_a * V._barycentroid_c + V._barycentroid_b * V._barycentroid_d,
-				V._barycentroid_dot11 << V._barycentroid_c * V._barycentroid_c + V._barycentroid_d * V._barycentroid_d,
-				V._barycentroid_invdenom << 1.0 / (V._barycentroid_dot00 * V._barycentroid_dot11 - V._barycentroid_dot01 * V._barycentroid_dot01),
-				// BlockY
-				V._blocky_x << (1.0 - 2.0 * Rnd(0,1)) * Rnd(0.9,1.01),
-				V._blocky_y << (1.0 - 2.0 * Rnd(0,1)) * Rnd(0.9,1.01),
-				V._blocky_mp << (1.0 - 2.0 * Rnd(0,1)) * Rnd(1.5,6.01),
-				// BlurZoom
-				V._blurzoom_length << Rnd(-1.01,1.5),
-				V._blurzoom_x << Rnd(-1.01,1.01),
-				V._blurzoom_y << Rnd(-1.01,1.01),
-				// Boarders2
-				V._boarders2_c << Rnd01 + 0.1,
-				V._boarders2_cl << V._boarders2_c * (Rnd01 + 0.1),
-				V._boarders2_cr << V._boarders2_c + V._boarders2_c * (Rnd01 + 0.1)
-			])
-	    ]
-	}
+			IfElse( EQ( Par.func,140), // Hypertile1
+				[ //here
+				],
+				[IfElse ( EQ( Par.func, 141), // Hypertile2
+					[ //here
+					],
+					[IfElse ( EQ( Par.func, 142), // JuliaC
+						[ //here
+						],
+						[IfElse ( EQ( Par.func, 143), // JuliaN2
+							[ //here
+							],
+							[IfElse ( EQ( Par.func, 144), // JuliaQ
+								[ //here
+								],
+								[IfElse ( EQ( Par.func,145), // Kaleidoscope
+									[ //here
+									],
+									[IfElse ( EQ(Par.func, 146), // LayeredSpiral
+										[ //here
+										],
+										[IfElse ( EQ( Par.func, 147), // LazyJess
+											[ //here
+											],
+											[IfElse ( EQ( Par.func, 148), // LazyTravis
+												[ //here
+												],
+												[ // LinearT
+												]
+											)]
+										)]
+									)]
+								)]
+							)]
+						)]
+					)]
+				)]
+			)
+		]
+		)
+   ]}
 	
 }
+
+
+/* template
+ 
+ def flPrecalc0_9 = {
+	[
+		Script([
+		])
+	]
+}
+ 
+ def flCalc0_9 = { [
+ Def("calc_0_9", 'calculate 0-9 %n %n %n',['func','X','Y'],
+	 [
+		 IfElse( EQ( Par.func,0), //
+			 [ //here
+			 ],
+			 [IfElse ( EQ( Par.func, 1), //
+				 [ //here
+				 ],
+				 [IfElse ( EQ( Par.func, 2), //
+					 [ //here
+					 ],
+					 [IfElse ( EQ( Par.func, 3), //
+						 [ //here
+						 ],
+						 [IfElse ( EQ( Par.func, 4), //
+							 [ //here
+							 ],
+							 [IfElse ( EQ( Par.func, 5), //
+								 [ //here
+								 ],
+								 [IfElse ( EQ(Par.func, 6), //
+									 [ //here
+									 ],
+									 [IfElse ( EQ( Par.func, 7), //
+										 [ //here
+										 ],
+										 [IfElse ( EQ( Par.func, 8), //
+											 [ //here
+											 ],
+											 [ // here
+											 ]
+										 )]
+									 )]
+								 )]
+							 )]
+						 )]
+					 )]
+				 )]
+			 )]
+		 )
+	 ]
+	 )
+]}
+ 
+ */
 
 def gen = new FFVars();
 
